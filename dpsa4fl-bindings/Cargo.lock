@@ -594,7 +594,7 @@ dependencies = [
 
 [[package]]
 name = "dpsa4fl-bindings"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "dpsa4fl",
  "pyo3",
