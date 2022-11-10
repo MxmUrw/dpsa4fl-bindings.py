@@ -1,0 +1,24 @@
+[build-system]
+requires = ["maturin>=0.13,<0.14"]
+build-backend = "maturin"
+
+[project]
+name = "dpsa4fl-bindings"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+
+[tool.poetry]
+name = "dpsa4fl-bindings"
+version = "0.1.0"
+description = ""
+authors = ["Maxim Urschumzew <u.maxim@live.de>"]
+readme = "README.md"
+packages = [{include = "dpsa4fl-bindings"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"

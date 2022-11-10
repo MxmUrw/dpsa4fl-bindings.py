@@ -1,0 +1,13 @@
+[package]
+name = "dpsa4fl-bindings"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "dpsa4fl_bindings"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.16.5", features = ["extension-module"] }
+dpsa4fl = { git = "https://github.com/dpsa-project/dpsa4fl" }
