@@ -27,8 +27,7 @@ jobs:
           MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
         run: |
           source $HOME/.cargo/env
-          for PYVER in 7 8 9 10; do
-            PYBIN=/opt/python/cp3${PYVER}*/bin
+          for PYBIN in /opt/python/cp3{7,8,9,10}*/bin; do
             "${PYBIN}/pip" install maturin
             "${PYBIN}/maturin" publish -m dpsa4fl-bindings/Cargo.toml -i "${PYBIN}/python" --manylinux 2014
           done
