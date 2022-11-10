@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-nightly-only:
+    name: Build nightly only
+    runs-on: ubuntu-latest
+    container: quay.io/pypa/manylinux2014_x86_64
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Checking password
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
+        run: echo "${MATURIN_PYPI_TOKEN}"
+
+      # Insert steps here to install you other dependencies. Note that you're running inside of cent os 7, not ubuntu
+      - name: Installing OpenSSL
+        run: |
+          yum install -y epel-release
+          yum install -y openssl openssl-libs openssl-devel
+          # yum install -y openssl11 openssl11-libs openssl11-devel
+
+      - name: Install nightly rust
+        run: curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+
+      - name: Build
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
+        run: |
+          source $HOME/.cargo/env
+          for PYBIN in /opt/python/cp3[789]*/bin; do
+            "${PYBIN}/pip" install maturin
+            "${PYBIN}/maturin" publish -m dpsa4fl-bindings/Cargo.toml -i "${PYBIN}/python" --manylinux 2014
+          done
+
+      # Auditwheel isn't generally necessary. This is only shown as refernce for cases where you link
+      # external libraries, in which case you have to set manylinux to off and then use auditwheel repair
+      # - name: Auditwheel repair
+      #   run: |
+      #     for wheel in dpsa4fl-bindings/target/wheels/*.whl; do
+      #         auditwheel repair "${wheel}"
+      #     done
+
+
+# jobs:
+#   linux:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - uses: actions/checkout@v3
+#     - uses: messense/maturin-action@v1
+#       with:
+#         manylinux: auto
+#         command: build
+#         args: --release --sdist -o dist
+#     - name: Upload wheels
+#       uses: actions/upload-artifact@v2
+#       with:
+#         name: wheels
+#         path: dist
+
+#   windows:
+#     runs-on: windows-latest
+#     steps:
+#     - uses: actions/checkout@v3
+#     - uses: messense/maturin-action@v1
+#       with:
+#         command: build
+#         args: --release -o dist
+#     - name: Upload wheels
+#       uses: actions/upload-artifact@v2
+#       with:
+#         name: wheels
+#         path: dist
+
+#   macos:
+#     runs-on: macos-latest
+#     steps:
+#     - uses: actions/checkout@v3
+#     - uses: messense/maturin-action@v1
+#       with:
+#         command: build
+#         args: --release -o dist --universal2
+#     - name: Upload wheels
+#       uses: actions/upload-artifact@v2
+#       with:
+#         name: wheels
+#         path: dist
+
+#   release:
+#     name: Release
+#     runs-on: ubuntu-latest
+#     if: "startsWith(github.ref, 'refs/tags/')"
+#     needs: [ macos, windows, linux ]
+#     steps:
+#       - uses: actions/download-artifact@v2
+#         with:
+#           name: wheels
+#       - name: Publish to PyPI
+#         uses: messense/maturin-action@v1
+#         env:
+#           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+#         with:
+#           command: upload
+#           args: --skip-existing *

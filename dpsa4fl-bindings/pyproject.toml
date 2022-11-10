@@ -16,7 +16,7 @@ classifiers = [
 name = "dpsa4fl-bindings"
 version = "0.1.0"
 description = ""
-authors = ["Maxim Urschumzew <u.maxim@live.de>"]
+authors = ["Maxim Urschumzew <maxim@makuri.dev>"]
 readme = "README.md"
 packages = [{include = "dpsa4fl-bindings"}]
 
