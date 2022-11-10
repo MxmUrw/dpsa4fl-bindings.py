@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-  pull_request:
+    branches:
+      - release
 
 jobs:
   build-nightly-only:
@@ -12,12 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
-      - name: Checking password
-        env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN }}
-        run: echo "${MATURIN_PYPI_TOKEN}"
-
-      # Insert steps here to install you other dependencies. Note that you're running inside of cent os 7, not ubuntu
+      # Insert steps here to install your other dependencies. Note that you're running inside of cent os 7, not ubuntu
       - name: Installing OpenSSL
         run: |
           yum install -y epel-release
