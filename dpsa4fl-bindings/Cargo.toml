@@ -9,7 +9,10 @@ name = "dpsa4fl_bindings"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.16.5", features = ["extension-module", "anyhow"] }
+pyo3 = { version = "0.17", features = ["extension-module", "anyhow"] }
+pyo3-asyncio = { version = "0.17", features = ["attributes", "tokio-runtime"] }
+tokio = { version = "1.22", features = ["time"] }
+async-std = "1.9"
 dpsa4fl = { git = "https://github.com/dpsa-project/dpsa4fl" }
 url = { version = "2.3.1" }
 anyhow = "1.0"
