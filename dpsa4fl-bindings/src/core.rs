@@ -19,14 +19,19 @@ use tokio::runtime::Runtime;
 #[pyclass]
 pub struct PyControllerState_Mut
 {
+    #[pyo3(get,set)]
     pub training_session_id: Option<u16>,
+
+    #[pyo3(get,set)]
     pub task_id: Option<String>,
 }
 
 #[pyclass]
 pub struct PyControllerState
 {
+    #[pyo3(get, set)]
     pub mstate: PyControllerState_Mut,
+
     pub istate: Py<PyCapsule>
 }
 
