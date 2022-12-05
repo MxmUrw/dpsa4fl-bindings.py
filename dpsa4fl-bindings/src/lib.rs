@@ -1,31 +1,47 @@
 
+use crate::core::PyControllerState;
+use crate::core::PyControllerState_Mut;
 use std::ffi::CString;
 
+use dpsa4fl::controller::api__start_round;
+use pyo3::with_embedded_python_interpreter;
 use pyo3::{prelude::*, types::PyCapsule};
-use dpsa4fl::{*, controller::{api__new_controller_state, ControllerState, api__create_session}, core::{CommonState_Parametrization, Locations}};
+use dpsa4fl::{*, controller::{api__new_controller_state, ControllerState_Mut, ControllerState_Immut, api__create_session, ControllerState_Permanent}, core::{CommonState_Parametrization, Locations}};
 use url::Url;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use tokio::runtime::Runtime;
 
+pub mod core;
+
 #[pyfunction]
-fn controller_api__new_state() -> Result<Py<PyCapsule>>
+fn controller_api__new_state() -> Result<PyControllerState>
 {
     let p = CommonState_Parametrization {
         location: Locations {
-            leader: Url::parse("http://127.0.0.1:9981")?, // .map_err(|e| PyErr::new(e.to_string()))?,
-            helper: Url::parse("http://127.0.0.1:9982")?, // .map_err(|e| PyErr::new(e.to_string()))?,
+            external_leader: Url::parse("http://127.0.0.1:9981")?, // .map_err(|e| PyErr::new(e.to_string()))?,
+            external_helper: Url::parse("http://127.0.0.1:9982")?, // .map_err(|e| PyErr::new(e.to_string()))?,
+            internal_leader: Url::parse("http://aggregator1:9991")?,
+            internal_helper: Url::parse("http://aggregator2:9992")?,
         },
         gradient_len: 16,
     };
-    let s = api__new_controller_state(p);
-    let name = CString::new("foo").unwrap();
-    let capsule : Py<PyCapsule> = Python::with_gil(|py| {
-        let capsule = PyCapsule::new(py, s, Some(name));
+    let istate = api__new_controller_state(p);
+    let istate : Py<PyCapsule> = Python::with_gil(|py| {
+        let capsule = PyCapsule::new(py, istate, None);
         capsule.map(|c| c.into())
-    })?;
+    }).unwrap();
 
-    // let s = PyCapsule::new()
-    Ok(capsule)
+    let mstate = PyControllerState_Mut {
+        training_session_id: None,
+        task_id: None
+    };
+
+    let res = PyControllerState {
+        mstate,
+        istate,
+    };
+
+    Ok(res)
 }
 
 // #[pyfunction]
@@ -63,27 +79,78 @@ fn controller_api__new_state() -> Result<Py<PyCapsule>>
 //     // }).await
 // }
 
-#[pyfunction]
-fn controller_api__create_session(py: Python, controller_state: Py<PyCapsule>) -> Result<()>
+fn run_on_controller<A>
+    (
+        controller_state: Py<PyControllerState>,
+        f: fn(&ControllerState_Immut, &mut ControllerState_Mut) -> Result<A>,
+    )
+    -> Result<A>
 {
     Python::with_gil(|py| {
-        let state : &ControllerState = unsafe {controller_state.as_ref(py).reference()};
+        let state_cell: &PyCell<PyControllerState> = controller_state.as_ref(py);
+        let mut state_ref_mut = state_cell.try_borrow_mut().map_err(|_| anyhow!("could not get mut ref"))?;
+        let state: &mut PyControllerState = &mut *state_ref_mut;
+
+        let istate : &ControllerState_Immut = unsafe {state.istate.as_ref(py).reference()};
+        let mut mstate : ControllerState_Mut = state.mstate.clone().try_into()?;
+        // let mut mut_state: ControllerState = state.clone();
         // execute async function in tokio runtime
-        Runtime::new().unwrap().block_on(api__create_session(state))
+        let res = f(istate, &mut mstate)?;
+
+        // write result into state
+        state.mstate = mstate.into();
+
+        Ok(res)
     })
 }
 
 #[pyfunction]
-fn test_read_uri(capsule: Py<PyCapsule>) -> Result<()>
+fn controller_api__create_session(controller_state: Py<PyControllerState>) -> Result<u16>
 {
-    Python::with_gil(|py| {
-        unsafe {
-            let c: &ControllerState = capsule.as_ref(py).reference();
-            println!("The uri of leader is {}", c.parametrization.location.leader);
-            Ok(())
-        }
-    })
+    run_on_controller(
+        controller_state,
+        |i,m| Runtime::new().unwrap().block_on(api__create_session(i, m))
+    )
+
+    // Python::with_gil(|py| {
+    //     let state_cell: &PyCell<PyControllerState> = controller_state.as_ref(py);
+    //     let mut state_ref_mut = state_cell.try_borrow_mut().map_err(|_| anyhow!("could not get mut ref"))?;
+    //     let state: &mut PyControllerState = &mut *state_ref_mut;
+
+    //     let istate : &ControllerState_Immut = unsafe {state.istate.as_ref(py).reference()};
+    //     let mut mstate : ControllerState_Mut = state.mstate.clone().try_into()?;
+    //     // let mut mut_state: ControllerState = state.clone();
+    //     // execute async function in tokio runtime
+    //     let res = Runtime::new().unwrap().block_on(api__create_session(istate, &mut mstate))?;
+
+    //     // write result into state
+    //     state.mstate = mstate.into();
+
+    //     Ok(res)
+    // })
 }
+
+#[pyfunction]
+fn controller_api__start_round(controller_state: Py<PyControllerState>) -> Result<String>
+{
+    run_on_controller(
+        controller_state,
+        |i,m| Runtime::new().unwrap().block_on(api__start_round(i, m))
+    )
+}
+
+
+// #[pyfunction]
+// fn test_read_uri(capsule: Py<PyCapsule>) -> Result<()>
+// {
+//     Python::with_gil(|py| {
+//         unsafe {
+//             let c: &ControllerState = capsule.as_ref(py).reference();
+//             println!("The uri of leader is {}", c.parametrization.location.external_leader);
+//             Ok(())
+//         }
+//     })
+// }
 
 /// Formats the sum of two numbers as string.
 #[pyfunction]
@@ -106,8 +173,9 @@ fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()>
     m.add_function(wrap_pyfunction!(call_main, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__new_state, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__create_session, m)?)?;
+    m.add_function(wrap_pyfunction!(controller_api__start_round, m)?)?;
     // m.add_function(wrap_pyfunction!(private_create_session, m)?)?;
-    m.add_function(wrap_pyfunction!(test_read_uri, m)?)?;
+    // m.add_function(wrap_pyfunction!(test_read_uri, m)?)?;
     Ok(())
 }
 

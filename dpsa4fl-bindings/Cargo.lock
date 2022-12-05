@@ -65,9 +65,9 @@ checksum = "216261ddc8289130e551ddcd5ce8a064710c0d064a4d2895c67151c92b5443f6"
 
 [[package]]
 name = "array-init"
-version = "2.0.1"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfb6d71005dc22a708c7496eee5c8dc0300ee47355de6256c3b35b12b5fef596"
+checksum = "3d62b7694a562cdf5a74227903507c56ab2cc8bdd1f781ed5cb4cf9c9f810bfc"
 
 [[package]]
 name = "async-channel"
@@ -692,9 +692,9 @@ dependencies = [
 
 [[package]]
 name = "cxx"
-version = "1.0.82"
+version = "1.0.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4a41a86530d0fe7f5d9ea779916b7cadd2d4f9add748b99c2c029cbbdfaf453"
+checksum = "bdf07d07d6531bfcdbe9b8b739b104610c6508dcc4d63b410585faf338241daf"
 dependencies = [
  "cc",
  "cxxbridge-flags",
@@ -704,9 +704,9 @@ dependencies = [
 
 [[package]]
 name = "cxx-build"
-version = "1.0.82"
+version = "1.0.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06416d667ff3e3ad2df1cd8cd8afae5da26cf9cec4d0825040f88b5ca659a2f0"
+checksum = "d2eb5b96ecdc99f72657332953d4d9c50135af1bac34277801cc3937906ebd39"
 dependencies = [
  "cc",
  "codespan-reporting",
@@ -719,15 +719,15 @@ dependencies = [
 
 [[package]]
 name = "cxxbridge-flags"
-version = "1.0.82"
+version = "1.0.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "820a9a2af1669deeef27cb271f476ffd196a2c4b6731336011e0ba63e2c7cf71"
+checksum = "ac040a39517fd1674e0f32177648334b0f4074625b5588a64519804ba0553b12"
 
 [[package]]
 name = "cxxbridge-macro"
-version = "1.0.82"
+version = "1.0.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a08a6e2fcc370a089ad3b4aaf54db3b1b4cee38ddabce5896b33eb693275f470"
+checksum = "1362b0ddcfc4eb0a1f57b68bd77dd99f0e826958a96abd0ae9bd092e114ffed6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -854,10 +854,11 @@ dependencies = [
 [[package]]
 name = "dpsa4fl"
 version = "0.1.0"
-source = "git+https://github.com/dpsa-project/dpsa4fl#ad968561e410aa895f6597ee88e50cb35418a4a5"
+source = "git+https://github.com/dpsa-project/dpsa4fl#10a160662fac3df7b621c05eba98af47a0498db1"
 dependencies = [
  "anyhow",
  "async-std 0.99.12",
+ "base64",
  "fixed",
  "janus_aggregator",
  "janus_client",
@@ -875,6 +876,7 @@ dependencies = [
  "anyhow",
  "async-std 1.12.0",
  "dpsa4fl",
+ "prio",
  "pyo3",
  "pyo3-asyncio",
  "tokio",
@@ -1582,7 +1584,7 @@ checksum = "4217ad341ebadf8d8e724e264f13e593e0648f5b3e94b3896a5df283be015ecc"
 [[package]]
 name = "janus_aggregator"
 version = "0.2.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#ef19026c53f05610838f8556bee8bd94a72308eb"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#31755617d875a7660d2110b38aa0aad842fa5eda"
 dependencies = [
  "anyhow",
  "atty",
@@ -1630,7 +1632,7 @@ dependencies = [
 [[package]]
 name = "janus_client"
 version = "0.2.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#ef19026c53f05610838f8556bee8bd94a72308eb"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#31755617d875a7660d2110b38aa0aad842fa5eda"
 dependencies = [
  "backoff",
  "derivative",
@@ -1650,7 +1652,7 @@ dependencies = [
 [[package]]
 name = "janus_core"
 version = "0.2.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#ef19026c53f05610838f8556bee8bd94a72308eb"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#31755617d875a7660d2110b38aa0aad842fa5eda"
 dependencies = [
  "backoff",
  "chrono",
@@ -1673,7 +1675,7 @@ dependencies = [
 [[package]]
 name = "janus_messages"
 version = "0.2.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#ef19026c53f05610838f8556bee8bd94a72308eb"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#31755617d875a7660d2110b38aa0aad842fa5eda"
 dependencies = [
  "anyhow",
  "base64",
@@ -1812,9 +1814,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.137"
+version = "0.2.138"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
+checksum = "db6d7e329c562c5dfab7a46a2afabc8b987ab9a4834c9d1ca04dc54c1546cef8"
 
 [[package]]
 name = "link-cplusplus"
