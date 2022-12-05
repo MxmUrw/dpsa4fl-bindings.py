@@ -169,6 +169,11 @@ fn call_main()
 #[pymodule]
 fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()>
 {
+    // add class
+    m.add_class::<PyControllerState>()?;
+    m.add_class::<PyControllerState_Mut>()?;
+
+    // add functions
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     m.add_function(wrap_pyfunction!(call_main, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__new_state, m)?)?;
