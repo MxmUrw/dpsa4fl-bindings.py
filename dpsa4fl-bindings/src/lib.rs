@@ -13,6 +13,10 @@ use dpsa4fl::client::api__submit;
 use dpsa4fl::controller::api__collect;
 use dpsa4fl::controller::api__start_round;
 use dpsa4fl::core::Locations;
+use numpy::IxDyn;
+use numpy::PyArray;
+use numpy::PyArrayDyn;
+use numpy::PyReadonlyArrayDyn;
 use pyo3::with_embedded_python_interpreter;
 use pyo3::{prelude::*, types::PyCapsule};
 use dpsa4fl::{*, controller::{api__new_controller_state, ControllerState_Mut, ControllerState_Immut, api__create_session, ControllerState_Permanent}, core::{CommonState_Parametrization}};
@@ -88,7 +92,7 @@ fn client_api__new_state() -> Result<PyClientState>
 // }
 
 #[pyfunction]
-fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: PyMeasurement) -> Result<()>
+fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: PyReadonlyArrayDyn<f64>) -> Result<()>
 {
     let round_settings = RoundSettings::new(task_id)?;
 

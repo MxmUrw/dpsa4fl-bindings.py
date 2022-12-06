@@ -49,6 +49,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ahash"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcb51a0695d8f838b1ee009b3fbf66bda078cd64590202a864a8f3e8c4315c47"
+dependencies = [
+ "getrandom",
+ "once_cell",
+ "version_check",
+]
+
+[[package]]
 name = "android_system_properties"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -854,7 +865,7 @@ dependencies = [
 [[package]]
 name = "dpsa4fl"
 version = "0.1.0"
-source = "git+https://github.com/dpsa-project/dpsa4fl#256e862c6c4aa05dd8f39361882566fa9215a440"
+source = "git+https://github.com/dpsa-project/dpsa4fl#55c033c7e5b76479b329292ecaff3a39cb25f146"
 dependencies = [
  "anyhow",
  "async-std 0.99.12",
@@ -872,13 +883,14 @@ dependencies = [
 
 [[package]]
 name = "dpsa4fl-bindings"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "async-std 1.12.0",
  "dpsa4fl",
  "fixed",
  "fixed-macro",
+ "numpy",
  "prio",
  "pyo3",
  "pyo3-asyncio",
@@ -1622,7 +1634,7 @@ checksum = "4217ad341ebadf8d8e724e264f13e593e0648f5b3e94b3896a5df283be015ecc"
 [[package]]
 name = "janus_aggregator"
 version = "0.2.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#0e3bbd16f711b76eef0ad37852abfa6c08e9592c"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#7be25b4a3ea11cc15b92420032db7a4ed178e9aa"
 dependencies = [
  "anyhow",
  "atty",
@@ -1671,7 +1683,7 @@ dependencies = [
 [[package]]
 name = "janus_client"
 version = "0.2.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#0e3bbd16f711b76eef0ad37852abfa6c08e9592c"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#7be25b4a3ea11cc15b92420032db7a4ed178e9aa"
 dependencies = [
  "backoff",
  "derivative",
@@ -1691,7 +1703,7 @@ dependencies = [
 [[package]]
 name = "janus_collector"
 version = "0.2.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#0e3bbd16f711b76eef0ad37852abfa6c08e9592c"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#7be25b4a3ea11cc15b92420032db7a4ed178e9aa"
 dependencies = [
  "backoff",
  "derivative",
@@ -1712,7 +1724,7 @@ dependencies = [
 [[package]]
 name = "janus_core"
 version = "0.2.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#0e3bbd16f711b76eef0ad37852abfa6c08e9592c"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#7be25b4a3ea11cc15b92420032db7a4ed178e9aa"
 dependencies = [
  "backoff",
  "chrono",
@@ -1735,7 +1747,7 @@ dependencies = [
 [[package]]
 name = "janus_messages"
 version = "0.2.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#0e3bbd16f711b76eef0ad37852abfa6c08e9592c"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy#7be25b4a3ea11cc15b92420032db7a4ed178e9aa"
 dependencies = [
  "anyhow",
  "base64",
@@ -1929,6 +1941,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "matrixmultiply"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "add85d4dd35074e6fedc608f8c8f513a3548619a9024b751949ef0e8e45a4d84"
+dependencies = [
+ "rawpointer",
+]
+
+[[package]]
 name = "maybe-uninit"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2083,6 +2104,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ndarray"
+version = "0.15.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "adb12d4e967ec485a5f71c6311fe28158e9d6f4bc4a447b474184d0f91a8fa32"
+dependencies = [
+ "matrixmultiply",
+ "num-complex",
+ "num-integer",
+ "num-traits",
+ "rawpointer",
+]
+
+[[package]]
 name = "net2"
 version = "0.2.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2101,6 +2135,15 @@ checksum = "77a8165726e8236064dbb45459242600304b42a5ea24ee2948e18e023bf7ba84"
 dependencies = [
  "overload",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "num-complex"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ae39348c8bc5fbd7f40c727a9925f03517afd2ab27d46702108b6a7e5414c19"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
@@ -2151,6 +2194,21 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "numpy"
+version = "0.17.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a462c1af5ba1fddec1488c4646993a23ae7931f9e170ccba23e9c7c834277797"
+dependencies = [
+ "ahash",
+ "libc",
+ "ndarray",
+ "num-complex",
+ "num-integer",
+ "num-traits",
+ "pyo3",
 ]
 
 [[package]]
@@ -2689,6 +2747,12 @@ checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
  "getrandom",
 ]
+
+[[package]]
+name = "rawpointer"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60a357793950651c4ed0f3f52338f53b2f809f32d83a07f72909fa13e4c6c1e3"
 
 [[package]]
 name = "rayon"

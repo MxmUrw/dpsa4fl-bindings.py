@@ -1,6 +1,6 @@
 [package]
 name = "dpsa4fl-bindings"
-version = "0.1.11"
+version = "0.1.12"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -19,3 +19,4 @@ anyhow = "1.0"
 prio = { version = "0.10.0", features = ["multithreaded"] }
 fixed = "1.19"
 fixed-macro = "1.1.1"
+numpy = "0.17"
