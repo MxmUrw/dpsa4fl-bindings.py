@@ -92,7 +92,7 @@ fn client_api__new_state() -> Result<PyClientState>
 // }
 
 #[pyfunction]
-fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: PyReadonlyArrayDyn<f64>) -> Result<()>
+fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: PyReadonlyArrayDyn<f32>) -> Result<()>
 {
     let round_settings = RoundSettings::new(task_id)?;
 
