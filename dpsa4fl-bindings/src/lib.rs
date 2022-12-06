@@ -95,7 +95,7 @@ fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: Py
         let mut state_ref_mut = state_cell.try_borrow_mut().map_err(|_| anyhow!("could not get mut ref"))?;
         let state: &mut PyClientState = &mut *state_ref_mut;
 
-        let zero: Fx = fixed!(0.25: I1F31);
+        let zero: Fx = fixed!(0: I1F31);
         let data: Measurement = vec![zero; state.mstate.get_parametrization().gradient_len];
 
         let res = Runtime::new().unwrap().block_on(api__submit(&mut state.mstate, round_settings, &data))?;
