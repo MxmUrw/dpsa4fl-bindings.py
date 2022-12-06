@@ -15,6 +15,8 @@ use tokio::runtime::Runtime;
 //     pub permanent: ControllerState_Permanent,
 // }
 
+pub type PyMeasurement = f64;
+
 #[derive(Clone)]
 #[pyclass]
 pub struct PyControllerState_Mut

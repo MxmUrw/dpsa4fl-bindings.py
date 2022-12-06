@@ -17,3 +17,5 @@ dpsa4fl = { git = "https://github.com/dpsa-project/dpsa4fl" }
 url = { version = "2.3.1" }
 anyhow = "1.0"
 prio = { version = "0.10.0", features = ["multithreaded"] }
+fixed = "1.19"
+fixed-macro = "1.1.1"

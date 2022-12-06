@@ -1,8 +1,15 @@
 
 use crate::core::PyControllerState;
 use crate::core::PyControllerState_Mut;
+use crate::core::PyMeasurement;
 use std::ffi::CString;
 
+use dpsa4fl::client::ClientStatePU;
+use dpsa4fl::client::Fx;
+use dpsa4fl::client::Measurement;
+use dpsa4fl::client::RoundSettings;
+use dpsa4fl::client::api__new_client_state;
+use dpsa4fl::client::api__submit;
 use dpsa4fl::controller::api__start_round;
 use pyo3::with_embedded_python_interpreter;
 use pyo3::{prelude::*, types::PyCapsule};
@@ -11,12 +18,17 @@ use url::Url;
 use anyhow::{anyhow, Result};
 use tokio::runtime::Runtime;
 
+use fixed::types::extra::{U15, U31, U63};
+use fixed::{FixedI16, FixedI32, FixedI64};
+use fixed_macro::fixed;
+
 pub mod core;
 
-#[pyfunction]
-fn controller_api__new_state() -> Result<PyControllerState>
+/////////////////////////////////////////////////////////////////
+// Param
+fn get_common_state_parametrization() -> Result<CommonState_Parametrization>
 {
-    let p = CommonState_Parametrization {
+    let res = CommonState_Parametrization {
         location: Locations {
             external_leader: Url::parse("http://127.0.0.1:9981")?, // .map_err(|e| PyErr::new(e.to_string()))?,
             external_helper: Url::parse("http://127.0.0.1:9982")?, // .map_err(|e| PyErr::new(e.to_string()))?,
@@ -25,6 +37,78 @@ fn controller_api__new_state() -> Result<PyControllerState>
         },
         gradient_len: 16,
     };
+    Ok(res)
+}
+
+/////////////////////////////////////////////////////////////////
+// Client api
+
+#[pyclass]
+struct PyClientState
+{
+    mstate: ClientStatePU,
+}
+
+#[pyfunction]
+fn client_api__new_state() -> Result<PyClientState>
+{
+    let p = get_common_state_parametrization()?;
+    let res = PyClientState {
+        mstate: api__new_client_state(p)
+    };
+    Ok(res)
+}
+
+// fn run_on_client<'a, A, B: 'a, F>
+//     (
+//         client_state: Py<PyClientState>,
+//         b: &'a B,
+//         f: F,
+//     )
+//     -> Result<A>
+//     where F: FnOnce(&'a mut ClientStatePU, &'a B) -> Result<A>,
+// {
+//     Python::with_gil(|py| {
+//         let state_cell: &PyCell<PyClientState> = client_state.as_ref(py);
+//         let mut state_ref_mut = state_cell.try_borrow_mut().map_err(|_| anyhow!("could not get mut ref"))?;
+//         let state: &mut PyClientState = &mut *state_ref_mut;
+
+//         // let istate : &ClientState_Immut = unsafe {state.istate.as_ref(py).reference()};
+//         // let mut mstate : ClientState_Mut = state.mstate.clone().try_into()?;
+//         // let mut mut_state: ControllerState = state.clone();
+//         // execute async function in tokio runtime
+//         let res = f(&mut state.mstate, &b)?;
+
+//         Ok(res)
+//     })
+// }
+
+#[pyfunction]
+fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: PyMeasurement) -> Result<()>
+{
+    let round_settings = RoundSettings::new(task_id)?;
+
+    Python::with_gil(|py| {
+        let state_cell: &PyCell<PyClientState> = client_state.as_ref(py);
+        let mut state_ref_mut = state_cell.try_borrow_mut().map_err(|_| anyhow!("could not get mut ref"))?;
+        let state: &mut PyClientState = &mut *state_ref_mut;
+
+        let zero: Fx = fixed!(0.25: I1F31);
+        let data: Measurement = vec![zero; state.mstate.get_parametrization().gradient_len];
+
+        let res = Runtime::new().unwrap().block_on(api__submit(&mut state.mstate, round_settings, &data))?;
+
+        Ok(res)
+    })
+}
+
+/////////////////////////////////////////////////////////////////
+// Controller api
+
+#[pyfunction]
+fn controller_api__new_state() -> Result<PyControllerState>
+{
+    let p = get_common_state_parametrization()?;
     let istate = api__new_controller_state(p);
     let istate : Py<PyCapsule> = Python::with_gil(|py| {
         let capsule = PyCapsule::new(py, istate, None);
@@ -44,40 +128,6 @@ fn controller_api__new_state() -> Result<PyControllerState>
     Ok(res)
 }
 
-// #[pyfunction]
-// fn sleep_for<'p>(py: Python<'p>, secs: &'p PyAny, c: &'p PyAny) -> PyResult<&'p PyAny> {
-//     let secs = secs.extract()?;
-//     let c2 : Py<PyCapsule> = c.extract()?;
-//     pyo3_asyncio::tokio::future_into_py_with_locals(
-//         py,
-//         pyo3_asyncio::tokio::get_current_locals(py)?,
-//         async move {
-//             tokio::time::sleep(std::time::Duration::from_secs(secs)).await;
-//             Python::with_gil(|py| Ok(py.None()))
-//         }
-//     )
-// }
-
-// #[pyfunction]
-// fn private_create_session<'a>(py: Python<'a>, controller_state: &'a Py<PyCapsule>) -> Result<&'a PyAny>
-// {
-//     // Python::with_gil(|py| async move {
-
-//     pyo3_asyncio::tokio::future_into_py_with_locals(
-//         py,
-//         pyo3_asyncio::tokio::get_current_locals(py)?,
-//         async move
-//         {
-//             Python::with_gil(|py| {
-//             let state : &ControllerState = unsafe {controller_state.as_ref(py).reference()};
-//             api__create_session(state)
-//             }).await?;
-//             Ok(())
-//         }
-//     )
-//     .map_err(|e| e.into())
-//     // }).await
-// }
 
 fn run_on_controller<A>
     (
@@ -111,23 +161,6 @@ fn controller_api__create_session(controller_state: Py<PyControllerState>) -> Re
         controller_state,
         |i,m| Runtime::new().unwrap().block_on(api__create_session(i, m))
     )
-
-    // Python::with_gil(|py| {
-    //     let state_cell: &PyCell<PyControllerState> = controller_state.as_ref(py);
-    //     let mut state_ref_mut = state_cell.try_borrow_mut().map_err(|_| anyhow!("could not get mut ref"))?;
-    //     let state: &mut PyControllerState = &mut *state_ref_mut;
-
-    //     let istate : &ControllerState_Immut = unsafe {state.istate.as_ref(py).reference()};
-    //     let mut mstate : ControllerState_Mut = state.mstate.clone().try_into()?;
-    //     // let mut mut_state: ControllerState = state.clone();
-    //     // execute async function in tokio runtime
-    //     let res = Runtime::new().unwrap().block_on(api__create_session(istate, &mut mstate))?;
-
-    //     // write result into state
-    //     state.mstate = mstate.into();
-
-    //     Ok(res)
-    // })
 }
 
 #[pyfunction]
@@ -140,30 +173,6 @@ fn controller_api__start_round(controller_state: Py<PyControllerState>) -> Resul
 }
 
 
-// #[pyfunction]
-// fn test_read_uri(capsule: Py<PyCapsule>) -> Result<()>
-// {
-//     Python::with_gil(|py| {
-//         unsafe {
-//             let c: &ControllerState = capsule.as_ref(py).reference();
-//             println!("The uri of leader is {}", c.parametrization.location.external_leader);
-//             Ok(())
-//         }
-//     })
-// }
-
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String>
-{
-    Ok((a + b + b).to_string())
-}
-
-#[pyfunction]
-fn call_main()
-{
-    dpsa4fl::main();
-}
 
 /// A Python module implemented in Rust.
 #[pymodule]
@@ -174,13 +183,14 @@ fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()>
     m.add_class::<PyControllerState_Mut>()?;
 
     // add functions
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
-    m.add_function(wrap_pyfunction!(call_main, m)?)?;
+    //--- controller api ---
     m.add_function(wrap_pyfunction!(controller_api__new_state, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__create_session, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__start_round, m)?)?;
-    // m.add_function(wrap_pyfunction!(private_create_session, m)?)?;
-    // m.add_function(wrap_pyfunction!(test_read_uri, m)?)?;
+    //--- client api ---
+    m.add_function(wrap_pyfunction!(client_api__new_state, m)?)?;
+    m.add_function(wrap_pyfunction!(client_api__submit, m)?)?;
+
     Ok(())
 }
 
