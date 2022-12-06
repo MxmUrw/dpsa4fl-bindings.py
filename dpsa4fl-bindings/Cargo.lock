@@ -854,7 +854,7 @@ dependencies = [
 [[package]]
 name = "dpsa4fl"
 version = "0.1.0"
-source = "git+https://github.com/dpsa-project/dpsa4fl#d65aa1d41075aebae4baf5d6e88d52652ec0f8fc"
+source = "git+https://github.com/dpsa-project/dpsa4fl#48ca10c944fc33e0740cfe940618d1de4f1965c0"
 dependencies = [
  "anyhow",
  "async-std 0.99.12",
@@ -871,7 +871,7 @@ dependencies = [
 
 [[package]]
 name = "dpsa4fl-bindings"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "anyhow",
  "async-std 1.12.0",

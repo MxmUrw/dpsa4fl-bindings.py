@@ -30,8 +30,10 @@ fn get_common_state_parametrization() -> Result<CommonState_Parametrization>
 {
     let res = CommonState_Parametrization {
         location: Locations {
-            external_leader: Url::parse("http://127.0.0.1:9981")?, // .map_err(|e| PyErr::new(e.to_string()))?,
-            external_helper: Url::parse("http://127.0.0.1:9982")?, // .map_err(|e| PyErr::new(e.to_string()))?,
+            external_leader_main: Url::parse("http://127.0.0.1:9991")?,
+            external_helper_main: Url::parse("http://127.0.0.1:9992")?,
+            external_leader_tasks: Url::parse("http://127.0.0.1:9981")?,
+            external_helper_tasks: Url::parse("http://127.0.0.1:9982")?,
             internal_leader: Url::parse("http://aggregator1:9991")?,
             internal_helper: Url::parse("http://aggregator2:9992")?,
         },
