@@ -10,10 +10,12 @@ use dpsa4fl::client::Measurement;
 use dpsa4fl::client::RoundSettings;
 use dpsa4fl::client::api__new_client_state;
 use dpsa4fl::client::api__submit;
+use dpsa4fl::controller::api__collect;
 use dpsa4fl::controller::api__start_round;
+use dpsa4fl::core::Locations;
 use pyo3::with_embedded_python_interpreter;
 use pyo3::{prelude::*, types::PyCapsule};
-use dpsa4fl::{*, controller::{api__new_controller_state, ControllerState_Mut, ControllerState_Immut, api__create_session, ControllerState_Permanent}, core::{CommonState_Parametrization, Locations}};
+use dpsa4fl::{*, controller::{api__new_controller_state, ControllerState_Mut, ControllerState_Immut, api__create_session, ControllerState_Permanent}, core::{CommonState_Parametrization}};
 use url::Url;
 use anyhow::{anyhow, Result};
 use tokio::runtime::Runtime;
@@ -174,6 +176,17 @@ fn controller_api__start_round(controller_state: Py<PyControllerState>) -> Resul
     )
 }
 
+#[pyfunction]
+fn controller_api__collect(controller_state: Py<PyControllerState>) -> Result<String>
+{
+    let res = run_on_controller(
+        controller_state,
+        |i,m| Runtime::new().unwrap().block_on(api__collect(i, m))
+    )?;
+
+    Ok(format!("Result: {:?}", res))
+}
+
 
 
 /// A Python module implemented in Rust.
@@ -189,6 +202,7 @@ fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()>
     m.add_function(wrap_pyfunction!(controller_api__new_state, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__create_session, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__start_round, m)?)?;
+    m.add_function(wrap_pyfunction!(controller_api__collect, m)?)?;
     //--- client api ---
     m.add_function(wrap_pyfunction!(client_api__new_state, m)?)?;
     m.add_function(wrap_pyfunction!(client_api__submit, m)?)?;
