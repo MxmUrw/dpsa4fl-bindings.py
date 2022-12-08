@@ -13,6 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            dpsa4fl-bindings/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       # Insert steps here to install your other dependencies. Note that you're running inside of cent os 7, not ubuntu
       - name: Installing OpenSSL
         run: |
