@@ -35,7 +35,7 @@ pub mod core;
 
 /////////////////////////////////////////////////////////////////
 // Param
-fn get_common_state_parametrization() -> Result<CommonState_Parametrization>
+fn get_common_state_parametrization(gradient_len: usize) -> Result<CommonState_Parametrization>
 {
     let res = CommonState_Parametrization {
         location: Locations {
@@ -46,7 +46,7 @@ fn get_common_state_parametrization() -> Result<CommonState_Parametrization>
             internal_leader: Url::parse("http://aggregator1:9991")?,
             internal_helper: Url::parse("http://aggregator2:9992")?,
         },
-        gradient_len: 16,
+        gradient_len,
     };
     Ok(res)
 }
@@ -61,9 +61,9 @@ struct PyClientState
 }
 
 #[pyfunction]
-fn client_api__new_state() -> Result<PyClientState>
+fn client_api__new_state(gradient_len: usize) -> Result<PyClientState>
 {
-    let p = get_common_state_parametrization()?;
+    let p = get_common_state_parametrization(gradient_len)?;
     let res = PyClientState {
         mstate: api__new_client_state(p)
     };
@@ -134,6 +134,10 @@ fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: Py
         // let zero: Fx = fixed!(0: I1F31);
         // let data: Measurement = vec![zero; state.mstate.get_parametrization().gradient_len];
 
+        let actual_len = data.len();
+        let expected_len = state.mstate.get_parametrization().gradient_len;
+        assert!(actual_len == expected_len, "Expected data to be have length {expected_len} but it was {actual_len}");
+
         let res = Runtime::new().unwrap().block_on(api__submit(&mut state.mstate, round_settings, &data))?;
 
         Ok(res)
@@ -144,9 +148,9 @@ fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: Py
 // Controller api
 
 #[pyfunction]
-fn controller_api__new_state() -> Result<PyControllerState>
+fn controller_api__new_state(gradient_len: usize) -> Result<PyControllerState>
 {
-    let p = get_common_state_parametrization()?;
+    let p = get_common_state_parametrization(gradient_len)?;
     let istate = api__new_controller_state(p);
     let istate : Py<PyCapsule> = Python::with_gil(|py| {
         let capsule = PyCapsule::new(py, istate, None);
