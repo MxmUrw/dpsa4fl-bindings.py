@@ -28,8 +28,14 @@ jobs:
           yum install -y openssl openssl-libs openssl-devel
 
       - name: Install nightly rust
-        uses: dtolnay/rust-toolchain@nightly
-        # run: curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+        # uses: dtolnay/rust-toolchain@nightly
+        run: |
+          curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "path is: $PATH"
+          echo "binaries in cargo bin are:"
+          ls "$HOME/.cargo/bin"
+
         # run: |
         #   rustup set auto-self-update disable
         #   rustup toolchain install nightly --profile minimal
