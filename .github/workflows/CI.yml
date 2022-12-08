@@ -28,7 +28,10 @@ jobs:
           yum install -y openssl openssl-libs openssl-devel
 
       - name: Install nightly rust
-        run: curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+        # run: curl --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly
+        run: |
+          rustup set auto-self-update disable
+          rustup toolchain install nightly --profile minimal
 
       - uses: Swatinem/rust-cache@v2
         with:
