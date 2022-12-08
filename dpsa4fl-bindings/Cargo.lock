@@ -883,13 +883,14 @@ dependencies = [
 
 [[package]]
 name = "dpsa4fl-bindings"
-version = "0.1.12"
+version = "0.1.13"
 dependencies = [
  "anyhow",
  "async-std 1.12.0",
  "dpsa4fl",
  "fixed",
  "fixed-macro",
+ "ndarray",
  "numpy",
  "prio",
  "pyo3",

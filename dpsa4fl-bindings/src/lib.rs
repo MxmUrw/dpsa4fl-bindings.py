@@ -13,6 +13,9 @@ use dpsa4fl::client::api__submit;
 use dpsa4fl::controller::api__collect;
 use dpsa4fl::controller::api__start_round;
 use dpsa4fl::core::Locations;
+use fixed::traits::LossyInto;
+use ndarray::ArrayD;
+use ndarray::ArrayViewD;
 use numpy::IxDyn;
 use numpy::PyArray;
 use numpy::PyArrayDyn;
@@ -91,9 +94,36 @@ fn client_api__new_state() -> Result<PyClientState>
 //     })
 // }
 
+fn array_to_vec<A>(xs: ArrayViewD<A>) -> Vec<A>
+    where A : Clone
+{
+    let mut ys = Vec::new();
+    ys.reserve_exact(xs.len());
+    for x in xs
+    {
+        ys.push(x.clone())
+    }
+    ys
+}
+
+fn float_to_fixed(x: &f32) -> Fx
+{
+    Fx::from_num(*x)
+}
+
 #[pyfunction]
 fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: PyReadonlyArrayDyn<f32>) -> Result<()>
 {
+    //----
+    // prepare data for prio
+    let data: ArrayViewD<f32> = data.as_array();
+    let shape = data.shape();
+    assert!(shape.len() == 1, "Expected the data passed to submit to be 1-dimensional. But it was {shape:?}");
+
+    let data = array_to_vec(data);
+    let data : Vec<Fx> = data.iter().map(float_to_fixed).collect();
+
+    //----
     let round_settings = RoundSettings::new(task_id)?;
 
     Python::with_gil(|py| {
@@ -101,8 +131,8 @@ fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: Py
         let mut state_ref_mut = state_cell.try_borrow_mut().map_err(|_| anyhow!("could not get mut ref"))?;
         let state: &mut PyClientState = &mut *state_ref_mut;
 
-        let zero: Fx = fixed!(0: I1F31);
-        let data: Measurement = vec![zero; state.mstate.get_parametrization().gradient_len];
+        // let zero: Fx = fixed!(0: I1F31);
+        // let data: Measurement = vec![zero; state.mstate.get_parametrization().gradient_len];
 
         let res = Runtime::new().unwrap().block_on(api__submit(&mut state.mstate, round_settings, &data))?;
 
