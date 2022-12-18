@@ -171,6 +171,16 @@ fn controller_api__new_state(gradient_len: usize) -> Result<PyControllerState>
 }
 
 
+#[pyfunction]
+fn controller_api__get_gradient_len(controller_state: Py<PyControllerState>) -> Result<usize>
+{
+    run_on_controller(
+        controller_state,
+        |i,m| Ok(i.parametrization.gradient_len)
+    )
+}
+
+
 fn run_on_controller<A>
     (
         controller_state: Py<PyControllerState>,
@@ -241,6 +251,7 @@ fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()>
     m.add_function(wrap_pyfunction!(controller_api__create_session, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__start_round, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__collect, m)?)?;
+    m.add_function(wrap_pyfunction!(controller_api__get_gradient_len, m)?)?;
     //--- client api ---
     m.add_function(wrap_pyfunction!(client_api__new_state, m)?)?;
     m.add_function(wrap_pyfunction!(client_api__submit, m)?)?;
