@@ -892,7 +892,7 @@ dependencies = [
  "fixed-macro",
  "ndarray",
  "numpy",
- "prio 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prio 0.10.0 (git+https://github.com/dpsa-project/libprio-rs.git?branch=fixedpoint-backported-bugfix)",
  "pyo3",
  "pyo3-asyncio",
  "tokio",
