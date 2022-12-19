@@ -18,8 +18,10 @@ use ndarray::ArrayD;
 use ndarray::ArrayViewD;
 use numpy::IxDyn;
 use numpy::PyArray;
+use numpy::PyArray1;
 use numpy::PyArrayDyn;
 use numpy::PyReadonlyArrayDyn;
+use numpy::ToPyArray;
 use pyo3::with_embedded_python_interpreter;
 use pyo3::{prelude::*, types::PyCapsule};
 use dpsa4fl::{*, controller::{api__new_controller_state, ControllerState_Mut, ControllerState_Immut, api__create_session, ControllerState_Permanent}, core::{CommonState_Parametrization}};
@@ -225,14 +227,16 @@ fn controller_api__start_round(controller_state: Py<PyControllerState>) -> Resul
 }
 
 #[pyfunction]
-fn controller_api__collect(controller_state: Py<PyControllerState>) -> Result<String>
+fn controller_api__collect(py: Python, controller_state: Py<PyControllerState>) -> Result<&PyArray1<f64>>
 {
     let res = run_on_controller(
         controller_state,
         |i,m| Runtime::new().unwrap().block_on(api__collect(i, m))
     )?;
 
-    Ok(format!("Result: {:?}", res))
+    let vector = res.aggregate_result();
+
+    Ok(vector.to_pyarray(py))
 }
 
 
