@@ -3,7 +3,7 @@
 
 **Warning: This project is work in progress and should not be used in production. The current implementation is a prototype.**
 
-The [dpsa4fl](https://github.com/dpsa-project/overview) project aims at providing a mechanism for secure and differentially private aggregation
+The dpsa4fl project aims at providing a mechanism for secure and differentially private aggregation
 of gradients in federated machine learning. For more information see the [project overview](https://github.com/dpsa-project/overview).
 
 ## About this package
