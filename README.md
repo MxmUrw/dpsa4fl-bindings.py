@@ -1,7 +1,19 @@
 
 # Python bindings for dpsa4fl
-This python package is a wrapper around the [dpsa4fl](https://github.com/dpsa-project/dpsa4fl) crate.
-See [here](https://github.com/dpsa-project/overview) for more information.
+
+**Warning: This project is work in progress and should not be used in production. The current implementation is a prototype.**
+
+The [dpsa4fl](https://github.com/dpsa-project/overview) project aims at providing a mechanism for secure and differentially private aggregation
+of gradients in federated machine learning. For more information see the [project overview](https://github.com/dpsa-project/overview).
+
+## About this package
+This package provides python bindings for the [dpsa4fl](https://github.com/dpsa-project/dpsa4fl) library.
+The following functionality is provided:
+ - **Controller api**: start a training session on the janus server, and collect aggregated gradients.
+ - **Client api**: securely submit gradients to the janus server.
+ 
+A modified [janus server setup](https://github.com/dpsa-project/dpsa4fl-testing-infrastructure) is required,
+see the [example project](https://github.com/dpsa-project/dpsa4fl-example-project) for step-by-step instructions.
 
 ## Development notes
 To release a new version of this package, you have to:
