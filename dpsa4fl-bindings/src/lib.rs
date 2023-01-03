@@ -37,6 +37,8 @@ pub mod core;
 
 /////////////////////////////////////////////////////////////////
 // Param
+
+/// Create new parametrization object for local testing.
 fn get_common_state_parametrization(gradient_len: usize) -> Result<CommonState_Parametrization>
 {
     let res = CommonState_Parametrization {
@@ -62,6 +64,8 @@ struct PyClientState
     mstate: ClientStatePU,
 }
 
+
+/// Create new client state.
 #[pyfunction]
 fn client_api__new_state(gradient_len: usize) -> Result<PyClientState>
 {
@@ -71,30 +75,6 @@ fn client_api__new_state(gradient_len: usize) -> Result<PyClientState>
     };
     Ok(res)
 }
-
-// fn run_on_client<'a, A, B: 'a, F>
-//     (
-//         client_state: Py<PyClientState>,
-//         b: &'a B,
-//         f: F,
-//     )
-//     -> Result<A>
-//     where F: FnOnce(&'a mut ClientStatePU, &'a B) -> Result<A>,
-// {
-//     Python::with_gil(|py| {
-//         let state_cell: &PyCell<PyClientState> = client_state.as_ref(py);
-//         let mut state_ref_mut = state_cell.try_borrow_mut().map_err(|_| anyhow!("could not get mut ref"))?;
-//         let state: &mut PyClientState = &mut *state_ref_mut;
-
-//         // let istate : &ClientState_Immut = unsafe {state.istate.as_ref(py).reference()};
-//         // let mut mstate : ClientState_Mut = state.mstate.clone().try_into()?;
-//         // let mut mut_state: ControllerState = state.clone();
-//         // execute async function in tokio runtime
-//         let res = f(&mut state.mstate, &b)?;
-
-//         Ok(res)
-//     })
-// }
 
 fn array_to_vec<A>(xs: ArrayViewD<A>) -> Vec<A>
     where A : Clone
@@ -113,6 +93,9 @@ fn float_to_fixed(x: &f32) -> Fx
     Fx::from_num(*x)
 }
 
+/// Submit a gradient vector to a janus server.
+///
+/// This function takes a `task_id` to identify the janus task to which this gradient corresponds.
 #[pyfunction]
 fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: PyReadonlyArrayDyn<f32>) -> Result<()>
 {
@@ -133,9 +116,6 @@ fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: Py
         let mut state_ref_mut = state_cell.try_borrow_mut().map_err(|_| anyhow!("could not get mut ref"))?;
         let state: &mut PyClientState = &mut *state_ref_mut;
 
-        // let zero: Fx = fixed!(0: I1F31);
-        // let data: Measurement = vec![zero; state.mstate.get_parametrization().gradient_len];
-
         let actual_len = data.len();
         let expected_len = state.mstate.get_parametrization().gradient_len;
         assert!(actual_len == expected_len, "Expected data to be have length {expected_len} but it was {actual_len}");
@@ -149,6 +129,7 @@ fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: Py
 /////////////////////////////////////////////////////////////////
 // Controller api
 
+/// Create new controller state.
 #[pyfunction]
 fn controller_api__new_state(gradient_len: usize) -> Result<PyControllerState>
 {
@@ -173,6 +154,7 @@ fn controller_api__new_state(gradient_len: usize) -> Result<PyControllerState>
 }
 
 
+/// Helper function to access the number of parameters expected by janus.
 #[pyfunction]
 fn controller_api__get_gradient_len(controller_state: Py<PyControllerState>) -> Result<usize>
 {
@@ -182,7 +164,7 @@ fn controller_api__get_gradient_len(controller_state: Py<PyControllerState>) -> 
     )
 }
 
-
+/// Run a function on controller state.
 fn run_on_controller<A>
     (
         controller_state: Py<PyControllerState>,
@@ -197,7 +179,7 @@ fn run_on_controller<A>
 
         let istate : &ControllerState_Immut = unsafe {state.istate.as_ref(py).reference()};
         let mut mstate : ControllerState_Mut = state.mstate.clone().try_into()?;
-        // let mut mut_state: ControllerState = state.clone();
+
         // execute async function in tokio runtime
         let res = f(istate, &mut mstate)?;
 
@@ -208,6 +190,7 @@ fn run_on_controller<A>
     })
 }
 
+/// Create a new training session.
 #[pyfunction]
 fn controller_api__create_session(controller_state: Py<PyControllerState>) -> Result<u16>
 {
@@ -217,6 +200,7 @@ fn controller_api__create_session(controller_state: Py<PyControllerState>) -> Re
     )
 }
 
+/// Start a new training round.
 #[pyfunction]
 fn controller_api__start_round(controller_state: Py<PyControllerState>) -> Result<String>
 {
@@ -226,6 +210,7 @@ fn controller_api__start_round(controller_state: Py<PyControllerState>) -> Resul
     )
 }
 
+/// Collect resulting aggregated gradient vector from janus.
 #[pyfunction]
 fn controller_api__collect(py: Python, controller_state: Py<PyControllerState>) -> Result<&PyArray1<f64>>
 {
@@ -241,7 +226,7 @@ fn controller_api__collect(py: Python, controller_state: Py<PyControllerState>) 
 
 
 
-/// A Python module implemented in Rust.
+/// The python module definition.
 #[pymodule]
 fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()>
 {
