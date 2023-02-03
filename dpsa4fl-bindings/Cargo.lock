@@ -304,12 +304,6 @@ checksum = "9e1b586273c5702936fe7b7d6896644d8be71e6314cfe09d3167c95f712589e8"
 
 [[package]]
 name = "base64"
-version = "0.20.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ea22880d78093b0cbe17c89f64a7d457941e65759157ec6cb31a31d652b05e5"
-
-[[package]]
-name = "base64"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4a4ddaa51a5bc52a6948f74c06d20aaaddb71924eab79b8c97a8c556e942d6a"
@@ -868,7 +862,7 @@ dependencies = [
 [[package]]
 name = "dpsa4fl"
 version = "0.1.0"
-source = "git+https://github.com/dpsa-project/dpsa4fl#6cebf9483901685ace2068428632f46d02cb7e0a"
+source = "git+https://github.com/dpsa-project/dpsa4fl?branch=dpsa-m4-main#8257bd32e77a2f8a57e3c10c9c54d7b7976c3863"
 dependencies = [
  "anyhow",
  "async-std 0.99.12",
@@ -879,7 +873,7 @@ dependencies = [
  "janus_collector",
  "janus_core",
  "janus_messages",
- "prio 0.10.0 (git+https://github.com/dpsa-project/libprio-rs.git?branch=release/0.10-hotfix-normvector-bugfix)",
+ "prio",
  "reqwest",
  "url",
 ]
@@ -895,7 +889,7 @@ dependencies = [
  "fixed-macro",
  "ndarray",
  "numpy",
- "prio 0.10.0 (git+https://github.com/dpsa-project/libprio-rs.git?branch=fixedpoint-backported-bugfix)",
+ "prio",
  "pyo3",
  "pyo3-asyncio",
  "tokio",
@@ -1640,7 +1634,7 @@ checksum = "fad582f4b9e86b6caa621cabeb0963332d92eea04729ab12892c2533951e6440"
 [[package]]
 name = "janus_aggregator"
 version = "0.3.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy-port-2023-01-26#86a745b2c5d0f1214306755ecdd00a7a492c5de9"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-m4-main#97bcd86cb95913186ab73b6335d25486a34d6077"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1667,7 +1661,7 @@ dependencies = [
  "opentelemetry",
  "postgres-protocol",
  "postgres-types",
- "prio 0.10.0 (git+https://github.com/dpsa-project/libprio-rs.git?branch=release/0.10-hotfix-normvector-bugfix)",
+ "prio",
  "rand",
  "reqwest",
  "ring",
@@ -1691,7 +1685,7 @@ dependencies = [
 [[package]]
 name = "janus_client"
 version = "0.3.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy-port-2023-01-26#86a745b2c5d0f1214306755ecdd00a7a492c5de9"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-m4-main#97bcd86cb95913186ab73b6335d25486a34d6077"
 dependencies = [
  "backoff",
  "derivative",
@@ -1699,7 +1693,7 @@ dependencies = [
  "http-api-problem",
  "janus_core",
  "janus_messages",
- "prio 0.10.0 (git+https://github.com/dpsa-project/libprio-rs.git?branch=release/0.10-hotfix-normvector-bugfix)",
+ "prio",
  "rand",
  "reqwest",
  "thiserror",
@@ -1711,7 +1705,7 @@ dependencies = [
 [[package]]
 name = "janus_collector"
 version = "0.3.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy-port-2023-01-26#86a745b2c5d0f1214306755ecdd00a7a492c5de9"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-m4-main#97bcd86cb95913186ab73b6335d25486a34d6077"
 dependencies = [
  "backoff",
  "base64 0.21.0",
@@ -1721,7 +1715,7 @@ dependencies = [
  "http-api-problem",
  "janus_core",
  "janus_messages",
- "prio 0.10.0 (git+https://github.com/dpsa-project/libprio-rs.git?branch=release/0.10-hotfix-normvector-bugfix)",
+ "prio",
  "reqwest",
  "retry-after",
  "thiserror",
@@ -1733,7 +1727,7 @@ dependencies = [
 [[package]]
 name = "janus_core"
 version = "0.3.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy-port-2023-01-26#86a745b2c5d0f1214306755ecdd00a7a492c5de9"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-m4-main#97bcd86cb95913186ab73b6335d25486a34d6077"
 dependencies = [
  "backoff",
  "base64 0.21.0",
@@ -1744,7 +1738,7 @@ dependencies = [
  "hpke-dispatch",
  "http-api-problem",
  "janus_messages",
- "prio 0.10.0 (git+https://github.com/dpsa-project/libprio-rs.git?branch=release/0.10-hotfix-normvector-bugfix)",
+ "prio",
  "rand",
  "reqwest",
  "ring",
@@ -1757,14 +1751,14 @@ dependencies = [
 [[package]]
 name = "janus_messages"
 version = "0.3.0"
-source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-deploy-port-2023-01-26#86a745b2c5d0f1214306755ecdd00a7a492c5de9"
+source = "git+https://github.com/dpsa-project/janus.git?branch=dpsa-m4-main#97bcd86cb95913186ab73b6335d25486a34d6077"
 dependencies = [
  "anyhow",
  "base64 0.21.0",
  "derivative",
  "hex",
  "num_enum",
- "prio 0.10.0 (git+https://github.com/dpsa-project/libprio-rs.git?branch=release/0.10-hotfix-normvector-bugfix)",
+ "prio",
  "rand",
  "serde",
  "thiserror",
@@ -2570,24 +2564,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 [[package]]
 name = "prio"
 version = "0.10.0"
-source = "git+https://github.com/dpsa-project/libprio-rs.git?branch=fixedpoint-backported-bugfix#ac100ca3f1da59290379f1612d104c732099e000"
-dependencies = [
- "aes",
- "base64 0.20.0",
- "byteorder",
- "cmac",
- "ctr",
- "getrandom",
- "rayon",
- "serde",
- "static_assertions",
- "thiserror",
-]
-
-[[package]]
-name = "prio"
-version = "0.10.0"
-source = "git+https://github.com/dpsa-project/libprio-rs.git?branch=release/0.10-hotfix-normvector-bugfix#ba113990116336537754e798402664f84415dc37"
+source = "git+https://github.com/dpsa-project/libprio-rs.git?branch=feature-simple-dp#66710dbb3a6ff8beb828b7a36027dccc0b14b6cd"
 dependencies = [
  "aes",
  "base64 0.21.0",

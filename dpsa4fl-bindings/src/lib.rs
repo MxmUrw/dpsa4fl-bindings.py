@@ -39,7 +39,7 @@ pub mod core;
 // Param
 
 /// Create new parametrization object for local testing.
-fn get_common_state_parametrization(gradient_len: usize) -> Result<CommonState_Parametrization>
+fn get_common_state_parametrization(gradient_len: usize, noise_parameter: u8) -> Result<CommonState_Parametrization>
 {
     let res = CommonState_Parametrization {
         location: Locations {
@@ -51,6 +51,7 @@ fn get_common_state_parametrization(gradient_len: usize) -> Result<CommonState_P
             internal_helper: Url::parse("http://aggregator2:9992")?,
         },
         gradient_len,
+        noise_parameter,
     };
     Ok(res)
 }
@@ -67,9 +68,9 @@ struct PyClientState
 
 /// Create new client state.
 #[pyfunction]
-fn client_api__new_state(gradient_len: usize) -> Result<PyClientState>
+fn client_api__new_state(gradient_len: usize, noise_parameter: u8) -> Result<PyClientState>
 {
-    let p = get_common_state_parametrization(gradient_len)?;
+    let p = get_common_state_parametrization(gradient_len, noise_parameter)?;
     let res = PyClientState {
         mstate: api__new_client_state(p)
     };
@@ -131,9 +132,9 @@ fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: Py
 
 /// Create new controller state.
 #[pyfunction]
-fn controller_api__new_state(gradient_len: usize) -> Result<PyControllerState>
+fn controller_api__new_state(gradient_len: usize, noise_parameter: u8) -> Result<PyControllerState>
 {
-    let p = get_common_state_parametrization(gradient_len)?;
+    let p = get_common_state_parametrization(gradient_len, noise_parameter)?;
     let istate = api__new_controller_state(p);
     let istate : Py<PyCapsule> = Python::with_gil(|py| {
         let capsule = PyCapsule::new(py, istate, None);

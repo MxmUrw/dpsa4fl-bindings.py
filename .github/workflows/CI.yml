@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - release
+      - dpsa-m4-main
 
 jobs:
   build-nightly-only:
