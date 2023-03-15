@@ -1,37 +1,28 @@
 
 use crate::core::PyControllerState;
 use crate::core::PyControllerState_Mut;
-use crate::core::PyMeasurement;
-use std::ffi::CString;
 
 use dpsa4fl::client::ClientStatePU;
 use dpsa4fl::client::Fx;
-use dpsa4fl::client::Measurement;
 use dpsa4fl::client::RoundSettings;
 use dpsa4fl::client::api__new_client_state;
 use dpsa4fl::client::api__submit;
 use dpsa4fl::controller::api__collect;
 use dpsa4fl::controller::api__start_round;
 use dpsa4fl::core::Locations;
-use fixed::traits::LossyInto;
-use ndarray::ArrayD;
 use ndarray::ArrayViewD;
-use numpy::IxDyn;
-use numpy::PyArray;
 use numpy::PyArray1;
-use numpy::PyArrayDyn;
 use numpy::PyReadonlyArrayDyn;
 use numpy::ToPyArray;
-use pyo3::with_embedded_python_interpreter;
 use pyo3::{prelude::*, types::PyCapsule};
-use dpsa4fl::{*, controller::{api__new_controller_state, ControllerState_Mut, ControllerState_Immut, api__create_session, ControllerState_Permanent}, core::{CommonState_Parametrization}};
+use dpsa4fl::{controller::{api__new_controller_state, ControllerState_Mut, ControllerState_Immut, api__create_session}, core::{CommonState_Parametrization}};
+use prio::flp::types::fixedpoint_l2::NoiseParameterType;
 use url::Url;
 use anyhow::{anyhow, Result};
 use tokio::runtime::Runtime;
 
 use fixed::types::extra::{U15, U31, U63};
 use fixed::{FixedI16, FixedI32, FixedI64};
-use fixed_macro::fixed;
 
 pub mod core;
 
@@ -39,7 +30,7 @@ pub mod core;
 // Param
 
 /// Create new parametrization object for local testing.
-fn get_common_state_parametrization(gradient_len: usize) -> Result<CommonState_Parametrization>
+fn get_common_state_parametrization(gradient_len: usize, noise_parameter: NoiseParameterType) -> Result<CommonState_Parametrization>
 {
     let res = CommonState_Parametrization {
         location: Locations {
@@ -51,6 +42,7 @@ fn get_common_state_parametrization(gradient_len: usize) -> Result<CommonState_P
             internal_helper: Url::parse("http://aggregator2:9992")?,
         },
         gradient_len,
+        noise_parameter,
     };
     Ok(res)
 }
@@ -67,9 +59,9 @@ struct PyClientState
 
 /// Create new client state.
 #[pyfunction]
-fn client_api__new_state(gradient_len: usize) -> Result<PyClientState>
+fn client_api__new_state(gradient_len: usize, noise_parameter: NoiseParameterType) -> Result<PyClientState>
 {
-    let p = get_common_state_parametrization(gradient_len)?;
+    let p = get_common_state_parametrization(gradient_len, noise_parameter)?;
     let res = PyClientState {
         mstate: api__new_client_state(p)
     };
@@ -131,9 +123,9 @@ fn client_api__submit(client_state: Py<PyClientState>, task_id: String, data: Py
 
 /// Create new controller state.
 #[pyfunction]
-fn controller_api__new_state(gradient_len: usize) -> Result<PyControllerState>
+fn controller_api__new_state(gradient_len: usize, noise_parameter: NoiseParameterType) -> Result<PyControllerState>
 {
-    let p = get_common_state_parametrization(gradient_len)?;
+    let p = get_common_state_parametrization(gradient_len, noise_parameter)?;
     let istate = api__new_controller_state(p);
     let istate : Py<PyCapsule> = Python::with_gil(|py| {
         let capsule = PyCapsule::new(py, istate, None);
