@@ -21,3 +21,9 @@ To release a new version of this package, you have to:
  2. Push the current state to the `release` branch. Then github actions will do the rest.
     Alternatively, you can use [act](https://github.com/nektos/act) to run github actions locally.
 
+
+Use [`maturin`](https://github.com/PyO3/maturin) to build the python package. To do so using the [`poetry`](https://python-poetry.org/) python package manager, do the following in the `dpsa4fl-bindings` folder:
+```
+poetry shell
+maturin develop
+```
