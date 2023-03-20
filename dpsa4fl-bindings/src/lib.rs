@@ -5,10 +5,10 @@ use anyhow::{anyhow, Result};
 use dpsa4fl::client::api__new_client_state;
 use dpsa4fl::client::api__submit;
 use dpsa4fl::client::ClientStatePU;
-use dpsa4fl::client::Fx;
 use dpsa4fl::client::RoundSettings;
 use dpsa4fl::controller::api__collect;
 use dpsa4fl::controller::api__start_round;
+use dpsa4fl::core::Fx;
 use dpsa4fl::core::Locations;
 use dpsa4fl::{
     controller::{
@@ -20,13 +20,9 @@ use ndarray::ArrayViewD;
 use numpy::PyArray1;
 use numpy::PyReadonlyArrayDyn;
 use numpy::ToPyArray;
-use prio::flp::types::fixedpoint_l2::NoiseParameterType;
 use pyo3::{prelude::*, types::PyCapsule};
 use tokio::runtime::Runtime;
 use url::Url;
-
-use fixed::types::extra::{U15, U31, U63};
-use fixed::{FixedI16, FixedI32, FixedI64};
 
 pub mod core;
 
@@ -36,7 +32,7 @@ pub mod core;
 /// Create new parametrization object for local testing.
 fn get_common_state_parametrization(
     gradient_len: usize,
-    noise_parameter: NoiseParameterType,
+    noise_parameter: f32,
 ) -> Result<CommonState_Parametrization> {
     let res = CommonState_Parametrization {
         location: Locations {
@@ -48,7 +44,7 @@ fn get_common_state_parametrization(
             internal_helper: Url::parse("http://aggregator2:9992")?,
         },
         gradient_len,
-        noise_parameter,
+        noise_parameter: float_to_fixed_ceil(&noise_parameter),
     };
     Ok(res)
 }
@@ -63,10 +59,7 @@ struct PyClientState {
 
 /// Create new client state.
 #[pyfunction]
-fn client_api__new_state(
-    gradient_len: usize,
-    noise_parameter: NoiseParameterType,
-) -> Result<PyClientState> {
+fn client_api__new_state(gradient_len: usize, noise_parameter: f32) -> Result<PyClientState> {
     let p = get_common_state_parametrization(gradient_len, noise_parameter)?;
     let res = PyClientState {
         mstate: api__new_client_state(p),
@@ -86,8 +79,12 @@ where
     ys
 }
 
-fn float_to_fixed(x: &f32) -> Fx {
-    Fx::from_num(*x)
+fn float_to_fixed_floor(x: &f32) -> Fx {
+    Fx::from_num(*x) // TODO this rounds to nearest, but we *have to* round towards 0
+}
+
+fn float_to_fixed_ceil(x: &f32) -> Fx {
+    Fx::from_num(*x) // TODO this rounds to nearest, but we *have to* round upwards
 }
 
 /// Submit a gradient vector to a janus server.
@@ -109,7 +106,7 @@ fn client_api__submit(
     );
 
     let data = array_to_vec(data);
-    let data: Vec<Fx> = data.iter().map(float_to_fixed).collect();
+    let data: Vec<Fx> = data.iter().map(float_to_fixed_floor).collect();
 
     //----
     let round_settings = RoundSettings::new(task_id)?;
@@ -145,7 +142,7 @@ fn client_api__submit(
 #[pyfunction]
 fn controller_api__new_state(
     gradient_len: usize,
-    noise_parameter: NoiseParameterType,
+    noise_parameter: f32,
 ) -> Result<PyControllerState> {
     let p = get_common_state_parametrization(gradient_len, noise_parameter)?;
     let istate = api__new_controller_state(p);
