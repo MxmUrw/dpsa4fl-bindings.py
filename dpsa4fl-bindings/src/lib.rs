@@ -3,12 +3,17 @@ use crate::core::PyControllerState_Mut;
 
 use anyhow::{anyhow, Result};
 use dpsa4fl::client::api__new_client_state;
-use dpsa4fl::client::api__submit;
+use dpsa4fl::client::api__submit_with;
 use dpsa4fl::client::ClientStatePU;
 use dpsa4fl::client::RoundSettings;
 use dpsa4fl::controller::api__collect;
 use dpsa4fl::controller::api__start_round;
-use dpsa4fl::core::Fx;
+use dpsa4fl::core::FixedAny;
+use dpsa4fl::core::VecFixedAny;
+use dpsa4fl_janus_tasks::core::VdafParameter;
+use dpsa4fl_janus_tasks::fixed::FixedTypeTag;
+// use dpsa4fl::core::FixedTypeTag;
+// use dpsa4fl::core::Fx;
 use dpsa4fl::core::Locations;
 use dpsa4fl::{
     controller::{
@@ -16,6 +21,7 @@ use dpsa4fl::{
     },
     core::CommonState_Parametrization,
 };
+use fixed::traits::Fixed;
 use ndarray::ArrayViewD;
 use numpy::PyArray1;
 use numpy::PyReadonlyArrayDyn;
@@ -30,24 +36,36 @@ pub mod core;
 // Param
 
 /// Create new parametrization object for local testing.
+/*
 fn get_common_state_parametrization(
     gradient_len: usize,
     noise_parameter: f32,
+    submission_type: FixedTypeTag,
+    locations: Locations,
 ) -> Result<CommonState_Parametrization> {
-    let res = CommonState_Parametrization {
-        location: Locations {
-            external_leader_main: Url::parse("http://127.0.0.1:9991")?,
-            external_helper_main: Url::parse("http://127.0.0.1:9992")?,
-            external_leader_tasks: Url::parse("http://127.0.0.1:9981")?,
-            external_helper_tasks: Url::parse("http://127.0.0.1:9982")?,
-            internal_leader: Url::parse("http://aggregator1:9991")?,
-            internal_helper: Url::parse("http://aggregator2:9992")?,
-        },
+
+    let vdaf_parameter = VdafParameter
+    {
         gradient_len,
-        noise_parameter: float_to_fixed_ceil(&noise_parameter),
+        noise_parameter: todo!()
+    };
+
+    let res = CommonState_Parametrization {
+        location: locations,
+        // location: Locations {
+        //     external_leader_main: Url::parse("http://127.0.0.1:9991")?,
+        //     external_helper_main: Url::parse("http://127.0.0.1:9992")?,
+        //     external_leader_tasks: Url::parse("http://127.0.0.1:9981")?,
+        //     external_helper_tasks: Url::parse("http://127.0.0.1:9982")?,
+        // },
+        vdaf_parameter: vdaf_parameter,
+        // gradient_len,
+        // noise_parameter: float_to_fixed_ceil(&noise_parameter),
+        // submission_type,
     };
     Ok(res)
 }
+*/
 
 /////////////////////////////////////////////////////////////////
 // Client api
@@ -59,11 +77,24 @@ struct PyClientState {
 
 /// Create new client state.
 #[pyfunction]
-fn client_api__new_state(gradient_len: usize, noise_parameter: f32) -> Result<PyClientState> {
-    let p = get_common_state_parametrization(gradient_len, noise_parameter)?;
-    let res = PyClientState {
-        mstate: api__new_client_state(p),
+fn client_api__new_state(
+    external_leader_main: String,
+    external_leader_tasks: String,
+    external_helper_main: String,
+    external_helper_tasks: String,
+) -> Result<PyClientState> {
+
+    let l = Locations {
+        external_leader_main: Url::parse(&external_leader_main)?,
+        external_leader_tasks: Url::parse(&external_leader_tasks)?,
+        external_helper_main: Url::parse(&external_helper_main)?,
+        external_helper_tasks: Url::parse(&external_helper_tasks)?,
     };
+
+    let res = PyClientState {
+        mstate: api__new_client_state(l),
+    };
+
     Ok(res)
 }
 
@@ -79,13 +110,14 @@ where
     ys
 }
 
-fn float_to_fixed_floor(x: &f32) -> Fx {
-    Fx::from_num(*x) // TODO this rounds to nearest, but we *have to* round towards 0
+fn float_to_fixed_floor<F : Fixed>(x: &f32) -> F {
+    F::from_num(*x) // TODO this rounds to nearest, but we *have to* round towards 0
 }
 
-fn float_to_fixed_ceil(x: &f32) -> Fx {
-    Fx::from_num(*x) // TODO this rounds to nearest, but we *have to* round upwards
+fn float_to_fixed_ceil<F : Fixed>(x: &f32) -> F {
+    F::from_num(*x) // TODO this rounds to nearest, but we *have to* round upwards
 }
+
 
 /// Submit a gradient vector to a janus server.
 ///
@@ -96,44 +128,47 @@ fn client_api__submit(
     task_id: String,
     data: PyReadonlyArrayDyn<f32>,
 ) -> Result<()> {
-    //----
-    // prepare data for prio
-    let data: ArrayViewD<f32> = data.as_array();
-    let shape = data.shape();
-    assert!(
-        shape.len() == 1,
-        "Expected the data passed to submit to be 1-dimensional. But it was {shape:?}"
-    );
-
-    let data = array_to_vec(data);
-    let data: Vec<Fx> = data.iter().map(float_to_fixed_floor).collect();
-
-    //----
-    let round_settings = RoundSettings::new(task_id)?;
-
     Python::with_gil(|py| {
+        //----
+        // prepare data for prio
+        let data: ArrayViewD<f32> = data.as_array();
+        let shape = data.shape();
+        assert!(
+            shape.len() == 1,
+            "Expected the data passed to submit to be 1-dimensional. But it was {shape:?}"
+        );
+
+        //----
+
         let state_cell: &PyCell<PyClientState> = client_state.as_ref(py);
         let mut state_ref_mut = state_cell
             .try_borrow_mut()
             .map_err(|_| anyhow!("could not get mut ref"))?;
         let state: &mut PyClientState = &mut *state_ref_mut;
 
-        let actual_len = data.len();
-        let expected_len = state.mstate.get_parametrization().gradient_len;
-        assert!(
-            actual_len == expected_len,
-            "Expected data to be have length {expected_len} but it was {actual_len}"
-        );
+        let data = array_to_vec(data);
+        // let data: VecFixedAny = match state.
+            // data.iter().map(float_to_fixed_floor).collect();
 
-        let res = Runtime::new().unwrap().block_on(api__submit(
+        let round_settings = RoundSettings::new(task_id)?;
+        let res = Runtime::new().unwrap().block_on(api__submit_with(
             &mut state.mstate,
             round_settings,
-            &data,
+            |param|
+            {
+                match param.vdaf_parameter.noise_parameter.get_tag()
+                {
+                    FixedTypeTag::FixedType16Bit => VecFixedAny::VecFixed16(data.iter().map(float_to_fixed_floor).collect()),
+                    FixedTypeTag::FixedType32Bit => VecFixedAny::VecFixed32(data.iter().map(float_to_fixed_floor).collect()),
+                    FixedTypeTag::FixedType64Bit => VecFixedAny::VecFixed64(data.iter().map(float_to_fixed_floor).collect()),
+                }
+            },
         ))?;
 
         Ok(res)
     })
 }
+
 
 /////////////////////////////////////////////////////////////////
 // Controller api
@@ -143,8 +178,40 @@ fn client_api__submit(
 fn controller_api__new_state(
     gradient_len: usize,
     noise_parameter: f32,
+    fixed_bitsize: usize,
+    external_leader_main: String,
+    external_leader_tasks: String,
+    external_helper_main: String,
+    external_helper_tasks: String,
 ) -> Result<PyControllerState> {
-    let p = get_common_state_parametrization(gradient_len, noise_parameter)?;
+
+    // TODO: do we use the correct rounding function here?
+    let noise_parameter = match fixed_bitsize
+    {
+        16 => FixedAny::Fixed16(float_to_fixed_ceil(&noise_parameter)),
+        32 => FixedAny::Fixed32(float_to_fixed_ceil(&noise_parameter)),
+        64 => FixedAny::Fixed64(float_to_fixed_ceil(&noise_parameter)),
+        _  => Err(anyhow!("The bitsize {fixed_bitsize} is not supported. Only 16, 32 or 64 is."))?,
+    };
+
+    let location = Locations
+    {
+        external_leader_main: Url::parse(&external_leader_main)?,
+        external_leader_tasks: Url::parse(&external_leader_tasks)?,
+        external_helper_main: Url::parse(&external_helper_main)?,
+        external_helper_tasks: Url::parse(&external_helper_tasks)?,
+    };
+
+    let vdaf_parameter = VdafParameter
+    {
+        gradient_len, noise_parameter
+    };
+
+    let p = CommonState_Parametrization
+    {
+        location, vdaf_parameter
+    };
+
     let istate = api__new_controller_state(p);
     let istate: Py<PyCapsule> = Python::with_gil(|py| {
         let capsule = PyCapsule::new(py, istate, None);
@@ -165,7 +232,7 @@ fn controller_api__new_state(
 /// Helper function to access the number of parameters expected by janus.
 #[pyfunction]
 fn controller_api__get_gradient_len(controller_state: Py<PyControllerState>) -> Result<usize> {
-    run_on_controller(controller_state, |i, m| Ok(i.parametrization.gradient_len))
+    run_on_controller(controller_state, |i, m| Ok(i.parametrization.vdaf_parameter.gradient_len))
 }
 
 /// Run a function on controller state.
