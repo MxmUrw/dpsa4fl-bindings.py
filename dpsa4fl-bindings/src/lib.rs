@@ -4,6 +4,7 @@ use crate::core::PyControllerState_Mut;
 use anyhow::{anyhow, Result};
 use dpsa4fl::client::api__new_client_state;
 use dpsa4fl::client::api__submit_with;
+use dpsa4fl::client::api__update_client_round_settings;
 use dpsa4fl::client::ClientStatePU;
 use dpsa4fl::client::RoundSettings;
 use dpsa4fl::controller::api__collect;
@@ -116,6 +117,59 @@ fn float_to_fixed_floor<F : Fixed>(x: &f32) -> F {
 
 fn float_to_fixed_ceil<F : Fixed>(x: &f32) -> F {
     F::from_num(*x) // TODO this rounds to nearest, but we *have to* round upwards
+}
+
+
+// NOTE: We could extract this pattern into a standalone `map_out` function for FixedAny
+fn fixed_to_float_ceil_any(x: FixedAny) -> f32
+{
+    match x
+    {
+        FixedAny::Fixed16(x) => x.to_num(),
+        FixedAny::Fixed32(x) => x.to_num(),
+        FixedAny::Fixed64(x) => x.to_num(),
+    }
+}
+
+
+#[pyfunction]
+fn client_api__get_noise_parameter(
+    client_state: Py<PyClientState>,
+    task_id: Option<String>,
+) -> Result<f32> {
+
+    Python::with_gil(|py| {
+
+        let state_cell: &PyCell<PyClientState> = client_state.as_ref(py);
+        let mut state_ref_mut = state_cell
+            .try_borrow_mut()
+            .map_err(|_| anyhow!("could not get mut ref"))?;
+        let state: &mut PyClientState = &mut *state_ref_mut;
+
+
+        // if we were given a task_id, we get the parameters for this task
+        // from the aggregators (by writing them into the client state)
+        // otherwise we assume that the client already has been registered for a round
+        match task_id
+        {
+            Some(task_id) =>
+            {
+                let round_settings = RoundSettings::new(task_id)?;
+                let future = api__update_client_round_settings(&mut state.mstate, round_settings);
+                Runtime::new().unwrap().block_on(future)?;
+            },
+            None => {},
+        }
+
+        // Now try to get the noise param
+        let noise = state.mstate.get_valid_state()
+            .ok_or(anyhow!(""))
+            .map(|s| s.parametrization.vdaf_parameter.noise_parameter.clone())
+            .map(fixed_to_float_ceil_any)?;
+
+        Ok(noise)
+
+    })
 }
 
 
@@ -308,6 +362,7 @@ fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
     //--- client api ---
     m.add_function(wrap_pyfunction!(client_api__new_state, m)?)?;
     m.add_function(wrap_pyfunction!(client_api__submit, m)?)?;
+    m.add_function(wrap_pyfunction!(client_api__get_noise_parameter, m)?)?;
 
     Ok(())
 }

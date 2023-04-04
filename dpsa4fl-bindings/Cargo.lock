@@ -917,7 +917,7 @@ checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 [[package]]
 name = "dpsa4fl"
 version = "0.1.0"
-source = "git+https://github.com/dpsa-project/dpsa4fl?branch=main#361fb91f0ba09e58c721853d6427bf91d107aad0"
+source = "git+https://github.com/dpsa-project/dpsa4fl?branch=main#042290dafedac39a49489bb276813100060510c1"
 dependencies = [
  "anyhow",
  "async-std 0.99.12",
@@ -938,7 +938,7 @@ dependencies = [
 
 [[package]]
 name = "dpsa4fl-bindings"
-version = "0.1.48"
+version = "0.1.49"
 dependencies = [
  "anyhow",
  "async-std 1.12.0",
