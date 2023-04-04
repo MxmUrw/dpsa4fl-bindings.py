@@ -54,8 +54,8 @@ fn get_common_state_parametrization(
         location: locations,
         // location: Locations {
         //     external_leader_main: Url::parse("http://127.0.0.1:9991")?,
-        //     external_helper_main: Url::parse("http://127.0.0.1:9992")?,
         //     external_leader_tasks: Url::parse("http://127.0.0.1:9981")?,
+        //     external_helper_main: Url::parse("http://127.0.0.1:9992")?,
         //     external_helper_tasks: Url::parse("http://127.0.0.1:9982")?,
         // },
         vdaf_parameter: vdaf_parameter,
