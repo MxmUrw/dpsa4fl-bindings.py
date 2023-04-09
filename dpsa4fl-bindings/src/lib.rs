@@ -1,5 +1,9 @@
+
 use crate::core::PyControllerState;
 use crate::core::PyControllerState_Mut;
+// use crate::core::fixed_to_float_ceil_any;
+use dpsa4fl_janus_tasks::fixed::float_to_fixed_floor;
+use dpsa4fl_janus_tasks::fixed::float_to_fixed_ceil;
 
 use anyhow::{anyhow, Result};
 use dpsa4fl::client::api__new_client_state;
@@ -23,6 +27,7 @@ use dpsa4fl::{
     core::CommonState_Parametrization,
 };
 use fixed::traits::Fixed;
+use fraction::GenericFraction;
 use ndarray::ArrayViewD;
 use numpy::PyArray1;
 use numpy::PyReadonlyArrayDyn;
@@ -40,7 +45,7 @@ pub mod core;
 /*
 fn get_common_state_parametrization(
     gradient_len: usize,
-    noise_parameter: f32,
+    privacy_parameter: f32,
     submission_type: FixedTypeTag,
     locations: Locations,
 ) -> Result<CommonState_Parametrization> {
@@ -48,7 +53,7 @@ fn get_common_state_parametrization(
     let vdaf_parameter = VdafParameter
     {
         gradient_len,
-        noise_parameter: todo!()
+        privacy_parameter: todo!()
     };
 
     let res = CommonState_Parametrization {
@@ -61,7 +66,7 @@ fn get_common_state_parametrization(
         // },
         vdaf_parameter: vdaf_parameter,
         // gradient_len,
-        // noise_parameter: float_to_fixed_ceil(&noise_parameter),
+        // privacy_parameter: float_to_fixed_ceil(&privacy_parameter),
         // submission_type,
     };
     Ok(res)
@@ -111,29 +116,10 @@ where
     ys
 }
 
-fn float_to_fixed_floor<F : Fixed>(x: &f32) -> F {
-    F::from_num(*x) // TODO this rounds to nearest, but we *have to* round towards 0
-}
-
-fn float_to_fixed_ceil<F : Fixed>(x: &f32) -> F {
-    F::from_num(*x) // TODO this rounds to nearest, but we *have to* round upwards
-}
-
-
-// NOTE: We could extract this pattern into a standalone `map_out` function for FixedAny
-fn fixed_to_float_ceil_any(x: FixedAny) -> f32
-{
-    match x
-    {
-        FixedAny::Fixed16(x) => x.to_num(),
-        FixedAny::Fixed32(x) => x.to_num(),
-        FixedAny::Fixed64(x) => x.to_num(),
-    }
-}
 
 
 #[pyfunction]
-fn client_api__get_noise_parameter(
+fn client_api__get_privacy_parameter(
     client_state: Py<PyClientState>,
     task_id: Option<String>,
 ) -> Result<f32> {
@@ -161,13 +147,14 @@ fn client_api__get_noise_parameter(
             None => {},
         }
 
-        // Now try to get the noise param
-        let noise = state.mstate.get_valid_state()
+        // Now try to get the privacy param
+        let privacy = state.mstate.get_valid_state()
             .ok_or(anyhow!(""))
-            .map(|s| s.parametrization.vdaf_parameter.noise_parameter.clone())
-            .map(fixed_to_float_ceil_any)?;
+            .map(|s| s.parametrization.vdaf_parameter.privacy_parameter.clone())?;
 
-        Ok(noise)
+        let privacy = (privacy.0 as f32) / (privacy.1 as f32);
+
+        Ok(privacy)
 
     })
 }
@@ -210,11 +197,11 @@ fn client_api__submit(
             round_settings,
             |param|
             {
-                match param.vdaf_parameter.noise_parameter.get_tag()
+                match param.vdaf_parameter.submission_type
                 {
-                    FixedTypeTag::FixedType16Bit => VecFixedAny::VecFixed16(data.iter().map(float_to_fixed_floor).collect()),
-                    FixedTypeTag::FixedType32Bit => VecFixedAny::VecFixed32(data.iter().map(float_to_fixed_floor).collect()),
-                    FixedTypeTag::FixedType64Bit => VecFixedAny::VecFixed64(data.iter().map(float_to_fixed_floor).collect()),
+                    FixedTypeTag::FixedType16Bit => VecFixedAny::VecFixed16(data.into_iter().map(float_to_fixed_floor).collect()),
+                    FixedTypeTag::FixedType32Bit => VecFixedAny::VecFixed32(data.into_iter().map(float_to_fixed_floor).collect()),
+                    FixedTypeTag::FixedType64Bit => VecFixedAny::VecFixed64(data.into_iter().map(float_to_fixed_floor).collect()),
                 }
             },
         ))?;
@@ -231,7 +218,7 @@ fn client_api__submit(
 #[pyfunction]
 fn controller_api__new_state(
     gradient_len: usize,
-    noise_parameter: f32,
+    privacy_parameter: f32,
     fixed_bitsize: usize,
     external_leader_main: String,
     external_leader_tasks: String,
@@ -239,12 +226,19 @@ fn controller_api__new_state(
     external_helper_tasks: String,
 ) -> Result<PyControllerState> {
 
-    // TODO: do we use the correct rounding function here?
-    let noise_parameter = match fixed_bitsize
+    // we convert from f32 to a fraction
+    let privacy_parameter_frac = GenericFraction::<u128>::from(privacy_parameter);
+    let privacy_parameter = match (privacy_parameter_frac.numer(), privacy_parameter_frac.denom())
     {
-        16 => FixedAny::Fixed16(float_to_fixed_ceil(&noise_parameter)),
-        32 => FixedAny::Fixed32(float_to_fixed_ceil(&noise_parameter)),
-        64 => FixedAny::Fixed64(float_to_fixed_ceil(&noise_parameter)),
+        (Some(n), Some(d)) => (n.clone(),d.clone()),
+        _ => Err(anyhow!("The privacy parameter {privacy_parameter_frac} is not a valid finite fraction."))?
+    };
+
+    let submission_type = match fixed_bitsize
+    {
+        16 => FixedTypeTag::FixedType16Bit,
+        32 => FixedTypeTag::FixedType32Bit,
+        64 => FixedTypeTag::FixedType64Bit,
         _  => Err(anyhow!("The bitsize {fixed_bitsize} is not supported. Only 16, 32 or 64 is."))?,
     };
 
@@ -258,7 +252,7 @@ fn controller_api__new_state(
 
     let vdaf_parameter = VdafParameter
     {
-        gradient_len, noise_parameter
+        gradient_len, privacy_parameter, submission_type
     };
 
     let p = CommonState_Parametrization
@@ -362,7 +356,7 @@ fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
     //--- client api ---
     m.add_function(wrap_pyfunction!(client_api__new_state, m)?)?;
     m.add_function(wrap_pyfunction!(client_api__submit, m)?)?;
-    m.add_function(wrap_pyfunction!(client_api__get_noise_parameter, m)?)?;
+    m.add_function(wrap_pyfunction!(client_api__get_privacy_parameter, m)?)?;
 
     Ok(())
 }

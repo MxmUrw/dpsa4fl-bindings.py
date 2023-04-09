@@ -1,6 +1,6 @@
 [package]
 name = "dpsa4fl-bindings"
-version = "0.1.49"
+version = "0.1.50"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -21,5 +21,6 @@ anyhow = "1.0"
 prio = {git = "https://github.com/dpsa-project/libprio-rs.git", branch ="feature-simple-dp", features = ["multithreaded"]}
 fixed = "1.19"
 fixed-macro = "1.1.1"
+fraction = "0.13.1"
 numpy = "0.17"
 ndarray = "0.15"
