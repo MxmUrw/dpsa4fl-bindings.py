@@ -918,7 +918,7 @@ checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 [[package]]
 name = "dpsa4fl"
 version = "0.1.0"
-source = "git+https://github.com/dpsa-project/dpsa4fl?branch=main#3e439fe41205cc318c2bcef86e901aa260cfb1f6"
+source = "git+https://github.com/dpsa-project/dpsa4fl?branch=main#79a32422cd685b7664a350f4fbb9562ab67d2c63"
 dependencies = [
  "anyhow",
  "async-std 0.99.12",
@@ -939,7 +939,7 @@ dependencies = [
 
 [[package]]
 name = "dpsa4fl-bindings"
-version = "0.1.53"
+version = "0.1.54"
 dependencies = [
  "anyhow",
  "async-std 1.12.0",
@@ -960,7 +960,7 @@ dependencies = [
 [[package]]
 name = "dpsa4fl_janus_tasks"
 version = "0.1.0"
-source = "git+https://github.com/dpsa-project/dpsa4fl-janus-tasks.git?branch=main#4d4b7c2bfe027759676cd314450167b34193284d"
+source = "git+https://github.com/dpsa-project/dpsa4fl-janus-tasks.git?branch=main#b2ad3f6a8a844adc86b0b85cc71db5fd8ce26f64"
 dependencies = [
  "anyhow",
  "async-std 0.99.12",
