@@ -197,6 +197,7 @@ fn client_api__submit(
             round_settings,
             |param|
             {
+                println!("submitting for tag {:?}", param.vdaf_parameter.submission_type.clone());
                 match param.vdaf_parameter.submission_type
                 {
                     FixedTypeTag::FixedType16Bit => VecFixedAny::VecFixed16(data.into_iter().map(float_to_fixed_floor).collect()),
