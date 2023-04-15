@@ -2,6 +2,7 @@
 use crate::core::PyControllerState;
 use crate::core::PyControllerState_Mut;
 use dpsa4fl::controller::api__end_session;
+use dpsa4fl_janus_tasks::fixed::VecFixedAny;
 // use crate::core::fixed_to_float_ceil_any;
 use dpsa4fl_janus_tasks::fixed::float_to_fixed_floor;
 use dpsa4fl_janus_tasks::fixed::float_to_fixed_ceil;
@@ -15,7 +16,6 @@ use dpsa4fl::client::RoundSettings;
 use dpsa4fl::controller::api__collect;
 use dpsa4fl::controller::api__start_round;
 use dpsa4fl::core::FixedAny;
-use dpsa4fl::core::VecFixedAny;
 use dpsa4fl_janus_tasks::core::VdafParameter;
 use dpsa4fl_janus_tasks::fixed::FixedTypeTag;
 // use dpsa4fl::core::FixedTypeTag;
@@ -39,40 +39,6 @@ use url::Url;
 
 pub mod core;
 
-/////////////////////////////////////////////////////////////////
-// Param
-
-/// Create new parametrization object for local testing.
-/*
-fn get_common_state_parametrization(
-    gradient_len: usize,
-    privacy_parameter: f32,
-    submission_type: FixedTypeTag,
-    locations: Locations,
-) -> Result<CommonState_Parametrization> {
-
-    let vdaf_parameter = VdafParameter
-    {
-        gradient_len,
-        privacy_parameter: todo!()
-    };
-
-    let res = CommonState_Parametrization {
-        location: locations,
-        // location: Locations {
-        //     external_leader_main: Url::parse("http://127.0.0.1:9991")?,
-        //     external_leader_tasks: Url::parse("http://127.0.0.1:9981")?,
-        //     external_helper_main: Url::parse("http://127.0.0.1:9992")?,
-        //     external_helper_tasks: Url::parse("http://127.0.0.1:9982")?,
-        // },
-        vdaf_parameter: vdaf_parameter,
-        // gradient_len,
-        // privacy_parameter: float_to_fixed_ceil(&privacy_parameter),
-        // submission_type,
-    };
-    Ok(res)
-}
-*/
 
 /////////////////////////////////////////////////////////////////
 // Client api
