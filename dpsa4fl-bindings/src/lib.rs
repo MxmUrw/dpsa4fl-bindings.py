@@ -1,6 +1,7 @@
 
 use crate::core::PyControllerState;
 use crate::core::PyControllerState_Mut;
+use dpsa4fl::controller::api__end_session;
 // use crate::core::fixed_to_float_ceil_any;
 use dpsa4fl_janus_tasks::fixed::float_to_fixed_floor;
 use dpsa4fl_janus_tasks::fixed::float_to_fixed_ceil;
@@ -317,6 +318,14 @@ fn controller_api__create_session(controller_state: Py<PyControllerState>) -> Re
     })
 }
 
+/// End the current new training session.
+#[pyfunction]
+fn controller_api__end_session(controller_state: Py<PyControllerState>) -> Result<()> {
+    run_on_controller(controller_state, |i, m| {
+        Runtime::new().unwrap().block_on(api__end_session(i, m))
+    })
+}
+
 /// Start a new training round.
 #[pyfunction]
 fn controller_api__start_round(controller_state: Py<PyControllerState>) -> Result<String> {
@@ -351,6 +360,7 @@ fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
     //--- controller api ---
     m.add_function(wrap_pyfunction!(controller_api__new_state, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__create_session, m)?)?;
+    m.add_function(wrap_pyfunction!(controller_api__end_session, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__start_round, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__collect, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api__get_gradient_len, m)?)?;
