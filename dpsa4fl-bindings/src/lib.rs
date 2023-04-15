@@ -1,20 +1,20 @@
 
 use crate::core::PyControllerState;
-use crate::core::PyControllerState_Mut;
-use dpsa4fl::controller::api__end_session;
+use crate::core::PyControllerStateMut;
+use dpsa4fl::controller::api_end_session;
 use dpsa4fl_janus_tasks::fixed::VecFixedAny;
 // use crate::core::fixed_to_float_ceil_any;
 use dpsa4fl_janus_tasks::fixed::float_to_fixed_floor;
 use dpsa4fl_janus_tasks::fixed::float_to_fixed_ceil;
 
 use anyhow::{anyhow, Result};
-use dpsa4fl::client::api__new_client_state;
-use dpsa4fl::client::api__submit_with;
-use dpsa4fl::client::api__update_client_round_settings;
+use dpsa4fl::client::api_new_client_state;
+use dpsa4fl::client::api_submit_with;
+use dpsa4fl::client::api_update_client_round_settings;
 use dpsa4fl::client::ClientStatePU;
 use dpsa4fl::client::RoundSettings;
-use dpsa4fl::controller::api__collect;
-use dpsa4fl::controller::api__start_round;
+use dpsa4fl::controller::api_collect;
+use dpsa4fl::controller::api_start_round;
 use dpsa4fl::core::FixedAny;
 use dpsa4fl_janus_tasks::core::VdafParameter;
 use dpsa4fl_janus_tasks::fixed::FixedTypeTag;
@@ -23,9 +23,9 @@ use dpsa4fl_janus_tasks::fixed::FixedTypeTag;
 use dpsa4fl::core::Locations;
 use dpsa4fl::{
     controller::{
-        api__create_session, api__new_controller_state, ControllerState_Immut, ControllerState_Mut,
+        api_create_session, api_new_controller_state, ControllerStateImmut, ControllerStateMut,
     },
-    core::CommonState_Parametrization,
+    core::CommonStateParametrization,
 };
 use fixed::traits::Fixed;
 use fraction::GenericFraction;
@@ -50,7 +50,7 @@ struct PyClientState {
 
 /// Create new client state.
 #[pyfunction]
-fn client_api__new_state(
+fn client_api_new_state(
     external_leader_main: String,
     external_leader_tasks: String,
     external_helper_main: String,
@@ -65,7 +65,7 @@ fn client_api__new_state(
     };
 
     let res = PyClientState {
-        mstate: api__new_client_state(l),
+        mstate: api_new_client_state(l),
     };
 
     Ok(res)
@@ -86,7 +86,7 @@ where
 
 
 #[pyfunction]
-fn client_api__get_privacy_parameter(
+fn client_api_get_privacy_parameter(
     client_state: Py<PyClientState>,
     task_id: Option<String>,
 ) -> Result<f32> {
@@ -108,7 +108,7 @@ fn client_api__get_privacy_parameter(
             Some(task_id) =>
             {
                 let round_settings = RoundSettings::new(task_id)?;
-                let future = api__update_client_round_settings(&mut state.mstate, round_settings);
+                let future = api_update_client_round_settings(&mut state.mstate, round_settings);
                 Runtime::new().unwrap().block_on(future)?;
             },
             None => {},
@@ -131,7 +131,7 @@ fn client_api__get_privacy_parameter(
 ///
 /// This function takes a `task_id` to identify the janus task to which this gradient corresponds.
 #[pyfunction]
-fn client_api__submit(
+fn client_api_submit(
     client_state: Py<PyClientState>,
     task_id: String,
     data: PyReadonlyArrayDyn<f32>,
@@ -159,7 +159,7 @@ fn client_api__submit(
             // data.iter().map(float_to_fixed_floor).collect();
 
         let round_settings = RoundSettings::new(task_id)?;
-        let res = Runtime::new().unwrap().block_on(api__submit_with(
+        let res = Runtime::new().unwrap().block_on(api_submit_with(
             &mut state.mstate,
             round_settings,
             |param|
@@ -184,7 +184,7 @@ fn client_api__submit(
 
 /// Create new controller state.
 #[pyfunction]
-fn controller_api__new_state(
+fn controller_api_new_state(
     gradient_len: usize,
     privacy_parameter: f32,
     fixed_bitsize: usize,
@@ -223,19 +223,19 @@ fn controller_api__new_state(
         gradient_len, privacy_parameter, submission_type
     };
 
-    let p = CommonState_Parametrization
+    let p = CommonStateParametrization
     {
         location, vdaf_parameter
     };
 
-    let istate = api__new_controller_state(p);
+    let istate = api_new_controller_state(p);
     let istate: Py<PyCapsule> = Python::with_gil(|py| {
         let capsule = PyCapsule::new(py, istate, None);
         capsule.map(|c| c.into())
     })
     .unwrap();
 
-    let mstate = PyControllerState_Mut {
+    let mstate = PyControllerStateMut {
         training_session_id: None,
         task_id: None,
     };
@@ -247,14 +247,14 @@ fn controller_api__new_state(
 
 /// Helper function to access the number of parameters expected by janus.
 #[pyfunction]
-fn controller_api__get_gradient_len(controller_state: Py<PyControllerState>) -> Result<usize> {
+fn controller_api_get_gradient_len(controller_state: Py<PyControllerState>) -> Result<usize> {
     run_on_controller(controller_state, |i, m| Ok(i.parametrization.vdaf_parameter.gradient_len))
 }
 
 /// Run a function on controller state.
 fn run_on_controller<A>(
     controller_state: Py<PyControllerState>,
-    f: fn(&ControllerState_Immut, &mut ControllerState_Mut) -> Result<A>,
+    f: fn(&ControllerStateImmut, &mut ControllerStateMut) -> Result<A>,
 ) -> Result<A> {
     Python::with_gil(|py| {
         let state_cell: &PyCell<PyControllerState> = controller_state.as_ref(py);
@@ -263,8 +263,8 @@ fn run_on_controller<A>(
             .map_err(|_| anyhow!("could not get mut ref"))?;
         let state: &mut PyControllerState = &mut *state_ref_mut;
 
-        let istate: &ControllerState_Immut = unsafe { state.istate.as_ref(py).reference() };
-        let mut mstate: ControllerState_Mut = state.mstate.clone().try_into()?;
+        let istate: &ControllerStateImmut = unsafe { state.istate.as_ref(py).reference() };
+        let mut mstate: ControllerStateMut = state.mstate.clone().try_into()?;
 
         // execute async function in tokio runtime
         let res = f(istate, &mut mstate)?;
@@ -278,36 +278,36 @@ fn run_on_controller<A>(
 
 /// Create a new training session.
 #[pyfunction]
-fn controller_api__create_session(controller_state: Py<PyControllerState>) -> Result<u16> {
+fn controller_api_create_session(controller_state: Py<PyControllerState>) -> Result<u16> {
     run_on_controller(controller_state, |i, m| {
-        Runtime::new().unwrap().block_on(api__create_session(i, m))
+        Runtime::new().unwrap().block_on(api_create_session(i, m))
     })
 }
 
 /// End the current new training session.
 #[pyfunction]
-fn controller_api__end_session(controller_state: Py<PyControllerState>) -> Result<()> {
+fn controller_api_end_session(controller_state: Py<PyControllerState>) -> Result<()> {
     run_on_controller(controller_state, |i, m| {
-        Runtime::new().unwrap().block_on(api__end_session(i, m))
+        Runtime::new().unwrap().block_on(api_end_session(i, m))
     })
 }
 
 /// Start a new training round.
 #[pyfunction]
-fn controller_api__start_round(controller_state: Py<PyControllerState>) -> Result<String> {
+fn controller_api_start_round(controller_state: Py<PyControllerState>) -> Result<String> {
     run_on_controller(controller_state, |i, m| {
-        Runtime::new().unwrap().block_on(api__start_round(i, m))
+        Runtime::new().unwrap().block_on(api_start_round(i, m))
     })
 }
 
 /// Collect resulting aggregated gradient vector from janus.
 #[pyfunction]
-fn controller_api__collect(
+fn controller_api_collect(
     py: Python,
     controller_state: Py<PyControllerState>,
 ) -> Result<&PyArray1<f64>> {
     let res = run_on_controller(controller_state, |i, m| {
-        Runtime::new().unwrap().block_on(api__collect(i, m))
+        Runtime::new().unwrap().block_on(api_collect(i, m))
     })?;
 
     let vector = res.aggregate_result();
@@ -320,20 +320,20 @@ fn controller_api__collect(
 fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()> {
     // add class
     m.add_class::<PyControllerState>()?;
-    m.add_class::<PyControllerState_Mut>()?;
+    m.add_class::<PyControllerStateMut>()?;
 
     // add functions
     //--- controller api ---
-    m.add_function(wrap_pyfunction!(controller_api__new_state, m)?)?;
-    m.add_function(wrap_pyfunction!(controller_api__create_session, m)?)?;
-    m.add_function(wrap_pyfunction!(controller_api__end_session, m)?)?;
-    m.add_function(wrap_pyfunction!(controller_api__start_round, m)?)?;
-    m.add_function(wrap_pyfunction!(controller_api__collect, m)?)?;
-    m.add_function(wrap_pyfunction!(controller_api__get_gradient_len, m)?)?;
+    m.add_function(wrap_pyfunction!(controller_api_new_state, m)?)?;
+    m.add_function(wrap_pyfunction!(controller_api_create_session, m)?)?;
+    m.add_function(wrap_pyfunction!(controller_api_end_session, m)?)?;
+    m.add_function(wrap_pyfunction!(controller_api_start_round, m)?)?;
+    m.add_function(wrap_pyfunction!(controller_api_collect, m)?)?;
+    m.add_function(wrap_pyfunction!(controller_api_get_gradient_len, m)?)?;
     //--- client api ---
-    m.add_function(wrap_pyfunction!(client_api__new_state, m)?)?;
-    m.add_function(wrap_pyfunction!(client_api__submit, m)?)?;
-    m.add_function(wrap_pyfunction!(client_api__get_privacy_parameter, m)?)?;
+    m.add_function(wrap_pyfunction!(client_api_new_state, m)?)?;
+    m.add_function(wrap_pyfunction!(client_api_submit, m)?)?;
+    m.add_function(wrap_pyfunction!(client_api_get_privacy_parameter, m)?)?;
 
     Ok(())
 }
