@@ -1,7 +1,7 @@
 use crate::core::PyControllerState;
 use crate::core::PyControllerStateMut;
 use dpsa4fl::controller::api_end_session;
-use dpsa4fl_janus_tasks::fixed::float_to_fixed_ceil;
+
 use dpsa4fl_janus_tasks::fixed::float_to_fixed_floor;
 use dpsa4fl_janus_tasks::fixed::VecFixedAny;
 
@@ -13,7 +13,7 @@ use dpsa4fl::client::ClientStatePU;
 use dpsa4fl::client::RoundSettings;
 use dpsa4fl::controller::api_collect;
 use dpsa4fl::controller::api_start_round;
-use dpsa4fl::core::FixedAny;
+
 use dpsa4fl::core::Locations;
 use dpsa4fl::{
     controller::{
@@ -23,7 +23,7 @@ use dpsa4fl::{
 };
 use dpsa4fl_janus_tasks::core::VdafParameter;
 use dpsa4fl_janus_tasks::fixed::FixedTypeTag;
-use fixed::traits::Fixed;
+
 use fraction::GenericFraction;
 use ndarray::ArrayViewD;
 use numpy::PyArray1;
@@ -258,7 +258,7 @@ fn controller_api_new_state(
 #[pyfunction]
 fn controller_api_get_gradient_len(controller_state: Py<PyControllerState>) -> Result<usize>
 {
-    run_on_controller(controller_state, |i, m| {
+    run_on_controller(controller_state, |i, _m| {
         Ok(i.parametrization.vdaf_parameter.gradient_len)
     })
 }

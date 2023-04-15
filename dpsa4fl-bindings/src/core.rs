@@ -1,10 +1,6 @@
 use anyhow::Result;
-use dpsa4fl::{
-    controller::{ControllerStateMut, ControllerStateRound},
-    core::FixedAny,
-};
-use dpsa4fl_janus_tasks::fixed::{Fixed16, Fixed32, Fixed64};
-use fixed::traits::Fixed;
+use dpsa4fl::controller::{ControllerStateMut, ControllerStateRound};
+
 use pyo3::{prelude::*, types::PyCapsule};
 
 pub type PyMeasurement = f64;
