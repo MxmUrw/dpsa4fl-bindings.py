@@ -22,8 +22,10 @@ use dpsa4fl::{
     core::CommonStateParametrization,
 };
 use dpsa4fl_janus_tasks::core::VdafParameter;
+use dpsa4fl_janus_tasks::core::TasksLocations;
 use dpsa4fl_janus_tasks::fixed::FixedTypeTag;
 
+use dpsa4fl_janus_tasks::janus_tasks_client::get_main_locations;
 use fraction::GenericFraction;
 use ndarray::ArrayViewD;
 use numpy::PyArray1;
@@ -47,17 +49,13 @@ struct PyClientState
 /// Create new client state.
 #[pyfunction]
 fn client_api_new_state(
-    external_leader_main: String,
     external_leader_tasks: String,
-    external_helper_main: String,
     external_helper_tasks: String,
 ) -> Result<PyClientState>
 {
-    let l = Locations {
-        external_leader_main: Url::parse(&external_leader_main)?,
-        external_leader_tasks: Url::parse(&external_leader_tasks)?,
-        external_helper_main: Url::parse(&external_helper_main)?,
-        external_helper_tasks: Url::parse(&external_helper_tasks)?,
+    let l = TasksLocations {
+        external_leader: Url::parse(&external_leader_tasks)?,
+        external_helper: Url::parse(&external_helper_tasks)?,
     };
 
     let res = PyClientState {
@@ -190,9 +188,7 @@ fn controller_api_new_state(
     gradient_len: usize,
     privacy_parameter: f32,
     fixed_bitsize: usize,
-    external_leader_main: String,
     external_leader_tasks: String,
-    external_helper_main: String,
     external_helper_tasks: String,
 ) -> Result<PyControllerState>
 {
@@ -219,11 +215,19 @@ fn controller_api_new_state(
         ))?,
     };
 
+    let tasks_locations = TasksLocations {
+        external_leader: Url::parse(&external_leader_tasks)?,
+        external_helper: Url::parse(&external_helper_tasks)?,
+    };
+
+
+    let main_locations = get_main_locations(tasks_locations.clone());
+
+    let main_locations = Runtime::new().unwrap().block_on(main_locations)?;
+
     let location = Locations {
-        external_leader_main: Url::parse(&external_leader_main)?,
-        external_leader_tasks: Url::parse(&external_leader_tasks)?,
-        external_helper_main: Url::parse(&external_helper_main)?,
-        external_helper_tasks: Url::parse(&external_helper_tasks)?,
+        main: main_locations,
+        tasks: tasks_locations,
     };
 
     let vdaf_parameter = VdafParameter {
