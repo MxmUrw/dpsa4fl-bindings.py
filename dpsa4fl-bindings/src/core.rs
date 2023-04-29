@@ -1,10 +1,23 @@
 use anyhow::Result;
-use dpsa4fl::controller::{ControllerStateMut, ControllerStateRound};
+
+use dpsa4fl::{
+    client::ClientStatePU,
+    controller::{ControllerStateMut, ControllerStateRound},
+};
 
 use pyo3::{prelude::*, types::PyCapsule};
 
 pub type PyMeasurement = f64;
 
+/// State object for dpsa4fl clients. Stores aggregator locations.
+#[pyclass]
+pub struct PyClientState
+{
+    pub mstate: ClientStatePU,
+}
+
+/// State object for dpsa4fl servers containing the current training session
+/// and taks IDs.
 #[derive(Clone)]
 #[pyclass]
 pub struct PyControllerStateMut
@@ -16,6 +29,10 @@ pub struct PyControllerStateMut
     pub task_id: Option<String>,
 }
 
+/// State object for dpsa4fl servers. Stores gradient length, privacy parameter,
+/// fixedpoint resolution and aggregator locations. Also contains current task
+/// and training session IDs, accessible with the `mstate: PyControllerStateMut`
+/// attribute.
 #[pyclass]
 pub struct PyControllerState
 {

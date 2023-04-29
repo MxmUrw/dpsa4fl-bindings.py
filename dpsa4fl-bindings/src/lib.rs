@@ -1,36 +1,29 @@
+use crate::core::PyClientState;
 use crate::core::PyControllerState;
 use crate::core::PyControllerStateMut;
-use dpsa4fl::controller::api_end_session;
-
-use dpsa4fl_janus_tasks::fixed::float_to_fixed_floor;
-use dpsa4fl_janus_tasks::fixed::VecFixedAny;
 
 use anyhow::{anyhow, Result};
-use dpsa4fl::client::api_new_client_state;
-use dpsa4fl::client::api_submit_with;
-use dpsa4fl::client::api_update_client_round_settings;
-use dpsa4fl::client::ClientStatePU;
-use dpsa4fl::client::RoundSettings;
-use dpsa4fl::controller::api_collect;
-use dpsa4fl::controller::api_start_round;
 
-use dpsa4fl::core::Locations;
 use dpsa4fl::{
-    controller::{
-        api_create_session, api_new_controller_state, ControllerStateImmut, ControllerStateMut,
+    client::{
+        api_new_client_state, api_submit_with, api_update_client_round_settings, RoundSettings,
     },
-    core::CommonStateParametrization,
+    controller::{
+        api_collect, api_create_session, api_end_session, api_new_controller_state,
+        api_start_round, ControllerStateImmut, ControllerStateMut,
+    },
+    core::{CommonStateParametrization, Locations},
 };
-use dpsa4fl_janus_tasks::core::VdafParameter;
-use dpsa4fl_janus_tasks::core::TasksLocations;
-use dpsa4fl_janus_tasks::fixed::FixedTypeTag;
 
-use dpsa4fl_janus_tasks::janus_tasks_client::get_main_locations;
+use dpsa4fl_janus_tasks::{
+    core::{TasksLocations, VdafParameter},
+    fixed::{float_to_fixed_floor, FixedTypeTag, VecFixedAny},
+    janus_tasks_client::get_main_locations,
+};
+
 use fraction::GenericFraction;
 use ndarray::ArrayViewD;
-use numpy::PyArray1;
-use numpy::PyReadonlyArrayDyn;
-use numpy::ToPyArray;
+use numpy::{PyArray1, PyReadonlyArrayDyn, ToPyArray};
 use pyo3::{prelude::*, types::PyCapsule};
 use tokio::runtime::Runtime;
 use url::Url;
@@ -40,13 +33,21 @@ pub mod core;
 /////////////////////////////////////////////////////////////////
 // Client api
 
-#[pyclass]
-struct PyClientState
-{
-    mstate: ClientStatePU,
-}
-
-/// Create new client state.
+/// Create new client state, containing the aggregator locations.
+///
+/// Parameters
+/// ----------
+/// external_leader_tasks: str
+///     Location of the leader aggregator server in URL format including the port.
+///     For example, for a server running locally: "http://127.0.0.1:9991"
+/// external_helper_tasks: str
+///     Location of the helper aggregator server in URL format including the port.
+///     For example, for a server running locally: "http://127.0.0.1:9992"
+///
+/// Returns
+/// -------
+/// state: PyClientState
+///     A client state object containing the input locations.
 #[pyfunction]
 fn client_api_new_state(
     external_leader_tasks: String,
@@ -78,6 +79,21 @@ where
     ys
 }
 
+/// Request the privacy parameter used by the aggregator to determine the amount
+/// of noise added. If this function returns `eps`, the aggregation result of
+/// this task will be `1/2 * eps^2` zero-concentrated differentially private.
+///
+/// Parameters
+/// ----------
+/// client_state: PyClientState
+///     A client state object containing the aggregator locations.
+/// task_id: str
+///     ID of the task whose privacy parameter we want to know.
+///
+/// Returns
+/// -------
+/// privacy: float
+///     The zCDP parameter of this aggregation task.
 #[pyfunction]
 fn client_api_get_privacy_parameter(
     client_state: Py<PyClientState>,
@@ -89,29 +105,24 @@ fn client_api_get_privacy_parameter(
         let mut state_ref_mut = state_cell
             .try_borrow_mut()
             .map_err(|_| anyhow!("could not get mut ref"))?;
-        let state: &mut PyClientState = &mut *state_ref_mut;
+        let state: &mut PyClientState = &mut state_ref_mut;
 
         // if we were given a task_id, we get the parameters for this task
         // from the aggregators (by writing them into the client state)
         // otherwise we assume that the client already has been registered for a round
-        match task_id
+        if let Some(task_id) = task_id
         {
-            Some(task_id) =>
-            {
-                let round_settings = RoundSettings::new(task_id)?;
-                let future = api_update_client_round_settings(&mut state.mstate, round_settings);
-                Runtime::new().unwrap().block_on(future)?;
-            }
-            None =>
-            {}
+            let round_settings = RoundSettings::new(task_id)?;
+            let future = api_update_client_round_settings(&mut state.mstate, round_settings);
+            Runtime::new().unwrap().block_on(future)?;
         }
 
         // Now try to get the privacy param
         let privacy = state
             .mstate
             .get_valid_state()
-            .ok_or(anyhow!(""))
-            .map(|s| s.parametrization.vdaf_parameter.privacy_parameter.clone())?;
+            .ok_or_else(|| anyhow!(""))
+            .map(|s| s.parametrization.vdaf_parameter.privacy_parameter)?;
 
         let privacy = (privacy.0 as f32) / (privacy.1 as f32);
 
@@ -121,7 +132,14 @@ fn client_api_get_privacy_parameter(
 
 /// Submit a gradient vector to a janus server.
 ///
-/// This function takes a `task_id` to identify the janus task to which this gradient corresponds.
+/// Parameters
+/// ----------
+/// client_state: PyClientState
+///     A client state object containing the aggregator locations.
+/// task_id: str
+///     ID to identify the janus task to which this gradient corresponds.
+/// data: numpy.ndarray
+///     The gradient to be submitted. Expected to be (1,)-shaped (flat).
 #[pyfunction]
 fn client_api_submit(
     client_state: Py<PyClientState>,
@@ -145,14 +163,14 @@ fn client_api_submit(
         let mut state_ref_mut = state_cell
             .try_borrow_mut()
             .map_err(|_| anyhow!("could not get mut ref"))?;
-        let state: &mut PyClientState = &mut *state_ref_mut;
+        let state: &mut PyClientState = &mut state_ref_mut;
 
         let data = array_to_vec(data);
-        // let data: VecFixedAny = match state.
-        // data.iter().map(float_to_fixed_floor).collect();
 
         let round_settings = RoundSettings::new(task_id)?;
-        let res = Runtime::new().unwrap().block_on(api_submit_with(
+
+        // send vector to janus client for secret sharing
+        Runtime::new().unwrap().block_on(api_submit_with(
             &mut state.mstate,
             round_settings,
             |param| {
@@ -175,7 +193,7 @@ fn client_api_submit(
             },
         ))?;
 
-        Ok(res)
+        Ok(())
     })
 }
 
@@ -183,6 +201,31 @@ fn client_api_submit(
 // Controller api
 
 /// Create new controller state.
+///
+/// Parameters
+/// ----------
+/// gradient_len: int
+///     Size of the gradients to be submitted.
+/// privacy_parameter: float
+///     used by the aggregators to determine the amount of noise added. Each
+///     aggregation result will be `1/2 * privacy_parameter^2` zero-concentrated
+///     differentially private.
+/// fixed_bitsize: int
+///     The resolution of the fixed-point encoding used for secure aggregation
+///     A larger value will result in a less lossy representation and more
+///     communication and computation overhead. Currently, 16, 32 and 64 bit are
+///     supported.
+/// external_leader_tasks: str
+///     Location of the leader aggregator server in URL format including the port.
+///     For example, for a server running locally: "http://127.0.0.1:9991"
+/// external_helper_tasks: str
+///     Location of the helper aggregator server in URL format including the port.
+///     For example, for a server running locally: "http://127.0.0.1:9992"
+///
+/// Returns
+/// -------
+/// state: PyControllerState
+///     A controller state object containing the input.
 #[pyfunction]
 fn controller_api_new_state(
     gradient_len: usize,
@@ -199,7 +242,7 @@ fn controller_api_new_state(
         privacy_parameter_frac.denom(),
     )
     {
-        (Some(n), Some(d)) => (n.clone(), d.clone()),
+        (Some(n), Some(d)) => (*n, *d),
         _ => Err(anyhow!(
             "The privacy parameter {privacy_parameter_frac} is not a valid finite fraction."
         ))?,
@@ -219,7 +262,6 @@ fn controller_api_new_state(
         external_leader: Url::parse(&external_leader_tasks)?,
         external_helper: Url::parse(&external_helper_tasks)?,
     };
-
 
     let main_locations = get_main_locations(tasks_locations.clone());
 
@@ -258,15 +300,6 @@ fn controller_api_new_state(
     Ok(res)
 }
 
-/// Helper function to access the number of parameters expected by janus.
-#[pyfunction]
-fn controller_api_get_gradient_len(controller_state: Py<PyControllerState>) -> Result<usize>
-{
-    run_on_controller(controller_state, |i, _m| {
-        Ok(i.parametrization.vdaf_parameter.gradient_len)
-    })
-}
-
 /// Run a function on controller state.
 fn run_on_controller<A>(
     controller_state: Py<PyControllerState>,
@@ -278,7 +311,7 @@ fn run_on_controller<A>(
         let mut state_ref_mut = state_cell
             .try_borrow_mut()
             .map_err(|_| anyhow!("could not get mut ref"))?;
-        let state: &mut PyControllerState = &mut *state_ref_mut;
+        let state: &mut PyControllerState = &mut state_ref_mut;
 
         let istate: &ControllerStateImmut = unsafe { state.istate.as_ref(py).reference() };
         let mut mstate: ControllerStateMut = state.mstate.clone().try_into()?;
@@ -294,6 +327,17 @@ fn run_on_controller<A>(
 }
 
 /// Create a new training session.
+///
+/// Parameters
+/// ----------
+/// controller_state: PyControllerState
+///     A controller state object identifying the aggregator servers on which
+///     the session is supposed to run.
+///
+/// Returns
+/// -------
+/// session_id: int
+///     The ID of the newly created training session.
 #[pyfunction]
 fn controller_api_create_session(controller_state: Py<PyControllerState>) -> Result<u16>
 {
@@ -302,7 +346,13 @@ fn controller_api_create_session(controller_state: Py<PyControllerState>) -> Res
     })
 }
 
-/// End the current new training session.
+/// End the current training session.
+///
+/// Parameters
+/// ----------
+/// controller_state: PyControllerState
+///     A controller state object identifying the aggregator servers on which
+///     the session is running.
 #[pyfunction]
 fn controller_api_end_session(controller_state: Py<PyControllerState>) -> Result<()>
 {
@@ -312,6 +362,17 @@ fn controller_api_end_session(controller_state: Py<PyControllerState>) -> Result
 }
 
 /// Start a new training round.
+///
+/// Parameters
+/// ----------
+/// controller_state: PyControllerState
+///     A controller state object identifying the aggregator servers on which
+///     the training round is supposed to run.
+///
+/// Returns
+/// -------
+/// task_id: str
+///     The ID of the newly started task, as a string.
 #[pyfunction]
 fn controller_api_start_round(controller_state: Py<PyControllerState>) -> Result<String>
 {
@@ -321,6 +382,17 @@ fn controller_api_start_round(controller_state: Py<PyControllerState>) -> Result
 }
 
 /// Collect resulting aggregated gradient vector from janus.
+///
+/// Parameters
+/// ----------
+/// controller_state: PyControllerState
+///     A controller state object identifying the aggregator servers from which
+///     to collect.
+///
+/// Returns
+/// -------
+/// aggregate: numpy.ndarray
+///     The aggregated and noised gradient vector. (1,)-shaped (flat).
 #[pyfunction]
 fn controller_api_collect(
     py: Python,
@@ -341,6 +413,7 @@ fn controller_api_collect(
 fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()>
 {
     // add class
+    m.add_class::<PyClientState>()?;
     m.add_class::<PyControllerState>()?;
     m.add_class::<PyControllerStateMut>()?;
 
@@ -351,7 +424,6 @@ fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()>
     m.add_function(wrap_pyfunction!(controller_api_end_session, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api_start_round, m)?)?;
     m.add_function(wrap_pyfunction!(controller_api_collect, m)?)?;
-    m.add_function(wrap_pyfunction!(controller_api_get_gradient_len, m)?)?;
     //--- client api ---
     m.add_function(wrap_pyfunction!(client_api_new_state, m)?)?;
     m.add_function(wrap_pyfunction!(client_api_submit, m)?)?;
