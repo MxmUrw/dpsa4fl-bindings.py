@@ -48,7 +48,7 @@ impl From<ControllerStateMut> for PyControllerStateMut
     {
         PyControllerStateMut {
             training_session_id: s.round.training_session_id.map(|x| x.into()),
-            task_id: s.round.task_id.map(dpsa4fl::helpers::task_id_to_string),
+            task_id: s.round.task_id.map(dpsa4fl::core::helpers::task_id_to_string),
         }
     }
 }
@@ -61,7 +61,7 @@ impl TryInto<ControllerStateMut> for PyControllerStateMut
     {
         let task_id = if let Some(task_id) = self.task_id
         {
-            Some(dpsa4fl::helpers::task_id_from_string(task_id)?)
+            Some(dpsa4fl::core::helpers::task_id_from_string(task_id)?)
         }
         else
         {

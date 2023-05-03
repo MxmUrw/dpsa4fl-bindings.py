@@ -1,26 +1,25 @@
 use crate::core::PyClientState;
 use crate::core::PyControllerState;
 use crate::core::PyControllerStateMut;
+use dpsa4fl::controller::api_end_session;
+
+use dpsa4fl::core::fixed::float_to_fixed_floor;
+use dpsa4fl::core::fixed::VecFixedAny;
 
 use anyhow::{anyhow, Result};
 
+use dpsa4fl::core::types::Locations;
 use dpsa4fl::{
     client::{
         api_new_client_state, api_submit_with, api_update_client_round_settings, RoundSettings,
     },
-    controller::{
-        api_collect, api_create_session, api_end_session, api_new_controller_state,
-        api_start_round, ControllerStateImmut, ControllerStateMut,
-    },
-    core::{CommonStateParametrization, Locations},
+    core::types::CommonStateParametrization,
 };
+use dpsa4fl::core::types::VdafParameter;
+use dpsa4fl::core::types::TasksLocations;
+use dpsa4fl::core::fixed::FixedTypeTag;
 
-use dpsa4fl_janus_tasks::{
-    core::{TasksLocations, VdafParameter},
-    fixed::{float_to_fixed_floor, FixedTypeTag, VecFixedAny},
-    janus_tasks_client::get_main_locations,
-};
-
+use dpsa4fl::janus_manager::interface::network::consumer::get_main_locations;
 use fraction::GenericFraction;
 use ndarray::ArrayViewD;
 use numpy::{PyArray1, PyReadonlyArrayDyn, ToPyArray};

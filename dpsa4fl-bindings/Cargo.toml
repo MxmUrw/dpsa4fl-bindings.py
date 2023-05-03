@@ -1,6 +1,6 @@
 [package]
 name = "dpsa4fl-bindings"
-version = "0.1.59"
+version = "0.1.60"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -14,7 +14,6 @@ pyo3-asyncio = { version = "0.17", features = ["attributes", "tokio-runtime"] }
 tokio = { version = "1.22", features = ["time"] }
 async-std = "1.9"
 dpsa4fl = { git = "https://github.com/dpsa-project/dpsa4fl", branch = "main" }
-dpsa4fl_janus_tasks = { git = "https://github.com/dpsa-project/dpsa4fl-janus-tasks.git", branch = "main" }
 url = { version = "2.3.1" }
 anyhow = "1.0"
 # prio = { version = "0.10.0", features = ["multithreaded"] }
