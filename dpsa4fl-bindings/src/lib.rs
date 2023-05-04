@@ -1,14 +1,25 @@
 use crate::core::PyClientState;
 use crate::core::PyControllerState;
 use crate::core::PyControllerStateMut;
-use dpsa4fl::controller::ControllerStateImmut;
-use dpsa4fl::controller::ControllerStateMut;
-use dpsa4fl::controller::api_collect;
-use dpsa4fl::controller::api_create_session;
-use dpsa4fl::controller::api_end_session;
+// use dpsa4fl::controller::ControllerStateImmut;
+// use dpsa4fl::controller::ControllerStateMut;
+// use dpsa4fl::controller::api_collect;
+// use dpsa4fl::controller::api_create_session;
+// use dpsa4fl::controller::api_end_session;
 
-use dpsa4fl::controller::api_new_controller_state;
-use dpsa4fl::controller::api_start_round;
+use dpsa4fl::client::interface::embedded::api_new_client_state;
+use dpsa4fl::client::interface::embedded::api_submit_with;
+use dpsa4fl::client::interface::embedded::api_update_client_round_settings;
+use dpsa4fl::client::interface::types::RoundSettings;
+use dpsa4fl::controller::interface::embedded::api_collect;
+use dpsa4fl::controller::interface::embedded::api_create_session;
+use dpsa4fl::controller::interface::embedded::api_end_session;
+use dpsa4fl::controller::interface::embedded::api_new_controller_state;
+use dpsa4fl::controller::interface::embedded::api_start_round;
+use dpsa4fl::controller::interface::types::ControllerStateImmut;
+use dpsa4fl::controller::interface::types::ControllerStateMut;
+// use dpsa4fl::controller::api_new_controller_state;
+// use dpsa4fl::controller::api_start_round;
 use dpsa4fl::core::fixed::float_to_fixed_floor;
 use dpsa4fl::core::fixed::VecFixedAny;
 
@@ -16,9 +27,9 @@ use anyhow::{anyhow, Result};
 
 use dpsa4fl::core::types::Locations;
 use dpsa4fl::{
-    client::{
-        api_new_client_state, api_submit_with, api_update_client_round_settings, RoundSettings,
-    },
+    // client::{
+    //     // api_new_client_state, api_submit_with, api_update_client_round_settings, RoundSettings,
+    // },
     core::types::CommonStateParametrization,
 };
 use dpsa4fl::core::types::VdafParameter;
@@ -34,6 +45,8 @@ use tokio::runtime::Runtime;
 use url::Url;
 
 pub mod core;
+
+use fixed_macro::fixed;
 
 /////////////////////////////////////////////////////////////////
 // Client api
@@ -186,13 +199,34 @@ fn client_api_submit(
                 match param.vdaf_parameter.submission_type
                 {
                     FixedTypeTag::FixedType16Bit => VecFixedAny::VecFixed16(
-                        data.into_iter().map(float_to_fixed_floor).collect(),
+                        {
+                            let v : Result<Vec<_>> = data.into_iter().map(float_to_fixed_floor).collect();
+                            if let Ok(v) = v {
+                                v
+                            } else {
+                                vec![fixed!(0.0: I1F15)]
+                            }
+                        }
                     ),
                     FixedTypeTag::FixedType32Bit => VecFixedAny::VecFixed32(
-                        data.into_iter().map(float_to_fixed_floor).collect(),
+                        {
+                            let v : Result<Vec<_>> = data.into_iter().map(float_to_fixed_floor).collect();
+                            if let Ok(v) = v {
+                                v
+                            } else {
+                                vec![fixed!(0.0 : I1F31)]
+                            }
+                        }
                     ),
                     FixedTypeTag::FixedType64Bit => VecFixedAny::VecFixed64(
-                        data.into_iter().map(float_to_fixed_floor).collect(),
+                        {
+                            let v : Result<Vec<_>> = data.into_iter().map(float_to_fixed_floor).collect();
+                            if let Ok(v) = v {
+                                v
+                            } else {
+                                vec![fixed!(0.0 : I1F63)]
+                            }
+                        }
                     ),
                 }
             },

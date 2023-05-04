@@ -1,8 +1,8 @@
 use anyhow::Result;
 
-use dpsa4fl::{
-    client::ClientStatePU,
-    controller::{ControllerStateMut, ControllerStateRound},
+use dpsa4fl::{controller::interface::types::{ControllerStateMut, ControllerStateRound}, client::interface::types::ClientStatePU
+    // client::ClientStatePU,
+    // controller::{ControllerStateMut, ControllerStateRound},
 };
 
 use pyo3::{prelude::*, types::PyCapsule};
