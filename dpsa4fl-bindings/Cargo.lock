@@ -953,7 +953,7 @@ dependencies = [
 
 [[package]]
 name = "dpsa4fl-bindings"
-version = "0.1.61"
+version = "0.1.62"
 dependencies = [
  "anyhow",
  "async-std 1.12.0",

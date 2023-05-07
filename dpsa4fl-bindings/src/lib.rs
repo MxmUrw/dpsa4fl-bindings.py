@@ -204,7 +204,7 @@ fn client_api_submit(
                             if let Ok(v) = v {
                                 v
                             } else {
-                                vec![fixed!(0.0: I1F15)]
+                                vec![fixed!(0.0: I1F15); param.vdaf_parameter.gradient_len]
                             }
                         }
                     ),
@@ -214,7 +214,7 @@ fn client_api_submit(
                             if let Ok(v) = v {
                                 v
                             } else {
-                                vec![fixed!(0.0 : I1F31)]
+                                vec![fixed!(0.0 : I1F31); param.vdaf_parameter.gradient_len]
                             }
                         }
                     ),
@@ -224,7 +224,7 @@ fn client_api_submit(
                             if let Ok(v) = v {
                                 v
                             } else {
-                                vec![fixed!(0.0 : I1F63)]
+                                vec![fixed!(0.0 : I1F63); param.vdaf_parameter.gradient_len]
                             }
                         }
                     ),
