@@ -1,11 +1,6 @@
 use crate::core::PyClientState;
 use crate::core::PyControllerState;
 use crate::core::PyControllerStateMut;
-// use dpsa4fl::controller::ControllerStateImmut;
-// use dpsa4fl::controller::ControllerStateMut;
-// use dpsa4fl::controller::api_collect;
-// use dpsa4fl::controller::api_create_session;
-// use dpsa4fl::controller::api_end_session;
 
 use dpsa4fl::client::interface::embedded::api_new_client_state;
 use dpsa4fl::client::interface::embedded::api_submit_with;
@@ -18,22 +13,15 @@ use dpsa4fl::controller::interface::embedded::api_new_controller_state;
 use dpsa4fl::controller::interface::embedded::api_start_round;
 use dpsa4fl::controller::interface::types::ControllerStateImmut;
 use dpsa4fl::controller::interface::types::ControllerStateMut;
-// use dpsa4fl::controller::api_new_controller_state;
-// use dpsa4fl::controller::api_start_round;
 use dpsa4fl::core::fixed::float_to_fixed_floor;
 use dpsa4fl::core::fixed::VecFixedAny;
 
 use anyhow::{anyhow, Result};
 
 use dpsa4fl::core::types::Locations;
-use dpsa4fl::{
-    // client::{
-    //     // api_new_client_state, api_submit_with, api_update_client_round_settings, RoundSettings,
-    // },
-    core::types::CommonStateParametrization,
-};
+use dpsa4fl::core::types::CommonStateParametrization;
 use dpsa4fl::core::types::VdafParameter;
-use dpsa4fl::core::types::TasksLocations;
+use dpsa4fl::core::types::ManagerLocations;
 use dpsa4fl::core::fixed::FixedTypeTag;
 
 use dpsa4fl::janus_manager::interface::network::consumer::get_main_locations;
@@ -72,7 +60,7 @@ fn client_api_new_state(
     external_helper_tasks: String,
 ) -> Result<PyClientState>
 {
-    let l = TasksLocations {
+    let l = ManagerLocations {
         external_leader: Url::parse(&external_leader_tasks)?,
         external_helper: Url::parse(&external_helper_tasks)?,
     };
@@ -297,7 +285,7 @@ fn controller_api_new_state(
         ))?,
     };
 
-    let tasks_locations = TasksLocations {
+    let tasks_locations = ManagerLocations {
         external_leader: Url::parse(&external_leader_tasks)?,
         external_helper: Url::parse(&external_helper_tasks)?,
     };
@@ -308,7 +296,7 @@ fn controller_api_new_state(
 
     let location = Locations {
         main: main_locations,
-        tasks: tasks_locations,
+        manager: tasks_locations,
     };
 
     let vdaf_parameter = VdafParameter {
