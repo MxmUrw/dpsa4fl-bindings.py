@@ -963,7 +963,7 @@ dependencies = [
 
 [[package]]
 name = "dpsa4fl-bindings"
-version = "0.1.65"
+version = "0.1.66"
 dependencies = [
  "anyhow",
  "async-std 1.12.0",
@@ -1766,7 +1766,7 @@ checksum = "af150ab688ff2122fcef229be89cb50dd66af9e01a4ff320cc137eecc9bacc38"
 [[package]]
 name = "janus_aggregator"
 version = "0.6.0"
-source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#cd51caa4d855fad6746f8629601d23cc90e18880"
+source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#44f6f1eb21ee2ea84506cc26af13e385e2bf56e3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1830,7 +1830,7 @@ dependencies = [
 [[package]]
 name = "janus_aggregator_api"
 version = "0.6.0"
-source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#cd51caa4d855fad6746f8629601d23cc90e18880"
+source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#44f6f1eb21ee2ea84506cc26af13e385e2bf56e3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1857,7 +1857,7 @@ dependencies = [
 [[package]]
 name = "janus_aggregator_core"
 version = "0.6.0"
-source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#cd51caa4d855fad6746f8629601d23cc90e18880"
+source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#44f6f1eb21ee2ea84506cc26af13e385e2bf56e3"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1903,7 +1903,7 @@ dependencies = [
 [[package]]
 name = "janus_client"
 version = "0.6.0"
-source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#cd51caa4d855fad6746f8629601d23cc90e18880"
+source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#44f6f1eb21ee2ea84506cc26af13e385e2bf56e3"
 dependencies = [
  "backoff",
  "derivative",
@@ -1924,7 +1924,7 @@ dependencies = [
 [[package]]
 name = "janus_collector"
 version = "0.6.0"
-source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#cd51caa4d855fad6746f8629601d23cc90e18880"
+source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#44f6f1eb21ee2ea84506cc26af13e385e2bf56e3"
 dependencies = [
  "backoff",
  "chrono",
@@ -1947,7 +1947,7 @@ dependencies = [
 [[package]]
 name = "janus_core"
 version = "0.6.0"
-source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#cd51caa4d855fad6746f8629601d23cc90e18880"
+source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#44f6f1eb21ee2ea84506cc26af13e385e2bf56e3"
 dependencies = [
  "anyhow",
  "backoff",
@@ -1977,7 +1977,7 @@ dependencies = [
 [[package]]
 name = "janus_messages"
 version = "0.6.0"
-source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#cd51caa4d855fad6746f8629601d23cc90e18880"
+source = "git+https://github.com/dpsa4fl/janus.git?branch=feature-differential-privacy#44f6f1eb21ee2ea84506cc26af13e385e2bf56e3"
 dependencies = [
  "anyhow",
  "base64 0.21.4",

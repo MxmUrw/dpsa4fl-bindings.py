@@ -104,7 +104,7 @@ where
 /// equal: Bool
 ///     True if the input epsilon matches the server budget, false otherwise.
 #[pyfunction]
-fn client_api_get_privacy_parameter(
+fn client_api_verify_privacy_parameter(
     client_state: Py<PyClientState>,
     task_id: Option<String>,
     max_eps: f32,
@@ -452,7 +452,7 @@ fn dpsa4fl_bindings(_py: Python, m: &PyModule) -> PyResult<()>
     //--- client api ---
     m.add_function(wrap_pyfunction!(client_api_new_state, m)?)?;
     m.add_function(wrap_pyfunction!(client_api_submit, m)?)?;
-    m.add_function(wrap_pyfunction!(client_api_get_privacy_parameter, m)?)?;
+    m.add_function(wrap_pyfunction!(client_api_verify_privacy_parameter, m)?)?;
 
     Ok(())
 }
