@@ -18,14 +18,15 @@ use dpsa4fl::core::fixed::VecFixedAny;
 
 use anyhow::{anyhow, Result};
 
-use dpsa4fl::core::types::Locations;
-use dpsa4fl::core::types::CommonStateParametrization;
-use dpsa4fl::core::types::VdafParameter;
-use dpsa4fl::core::types::ManagerLocations;
 use dpsa4fl::core::fixed::FixedTypeTag;
+use dpsa4fl::core::types::CommonStateParametrization;
+use dpsa4fl::core::types::EpsilonType;
+use dpsa4fl::core::types::Locations;
+use dpsa4fl::core::types::ManagerLocations;
+use dpsa4fl::core::types::PrivacyParameterType;
+use dpsa4fl::core::types::VdafParameter;
 
 use dpsa4fl::janus_manager::interface::network::consumer::get_main_locations;
-use fraction::GenericFraction;
 use ndarray::ArrayViewD;
 use numpy::{PyArray1, PyReadonlyArrayDyn, ToPyArray};
 use pyo3::{prelude::*, types::PyCapsule};
@@ -95,16 +96,19 @@ where
 ///     A client state object containing the aggregator locations.
 /// task_id: str
 ///     ID of the task whose privacy parameter we want to know.
+/// want_eps: f32
+///     The ZCdp budget epsilon the client requested.
 ///
 /// Returns
 /// -------
-/// privacy: float
-///     The zCDP parameter of this aggregation task.
+/// equal: Bool
+///     True if the input epsilon matches the server budget, false otherwise.
 #[pyfunction]
 fn client_api_get_privacy_parameter(
     client_state: Py<PyClientState>,
     task_id: Option<String>,
-) -> Result<f32>
+    max_eps: f32,
+) -> Result<bool>
 {
     Python::with_gil(|py| {
         let state_cell: &PyCell<PyClientState> = client_state.as_ref(py);
@@ -128,11 +132,9 @@ fn client_api_get_privacy_parameter(
             .mstate
             .get_valid_state()
             .ok_or_else(|| anyhow!(""))
-            .map(|s| s.parametrization.vdaf_parameter.privacy_parameter)?;
+            .map(|s| s.parametrization.vdaf_parameter.privacy_parameter.clone())?;
 
-        let privacy = (privacy.0 as f32) / (privacy.1 as f32);
-
-        Ok(privacy)
+        Ok(privacy <= PrivacyParameterType::new(EpsilonType::try_from(max_eps)?))
     })
 }
 
@@ -186,36 +188,42 @@ fn client_api_submit(
                 );
                 match param.vdaf_parameter.submission_type
                 {
-                    FixedTypeTag::FixedType16Bit => VecFixedAny::VecFixed16(
+                    FixedTypeTag::FixedType16Bit => VecFixedAny::VecFixed16({
+                        let v: Result<Vec<_>> =
+                            data.into_iter().map(float_to_fixed_floor).collect();
+                        if let Ok(v) = v
                         {
-                            let v : Result<Vec<_>> = data.into_iter().map(float_to_fixed_floor).collect();
-                            if let Ok(v) = v {
-                                v
-                            } else {
-                                vec![fixed!(0.0: I1F15); param.vdaf_parameter.gradient_len]
-                            }
+                            v
                         }
-                    ),
-                    FixedTypeTag::FixedType32Bit => VecFixedAny::VecFixed32(
+                        else
                         {
-                            let v : Result<Vec<_>> = data.into_iter().map(float_to_fixed_floor).collect();
-                            if let Ok(v) = v {
-                                v
-                            } else {
-                                vec![fixed!(0.0 : I1F31); param.vdaf_parameter.gradient_len]
-                            }
+                            vec![fixed!(0.0: I1F15); param.vdaf_parameter.gradient_len]
                         }
-                    ),
-                    FixedTypeTag::FixedType64Bit => VecFixedAny::VecFixed64(
+                    }),
+                    FixedTypeTag::FixedType32Bit => VecFixedAny::VecFixed32({
+                        let v: Result<Vec<_>> =
+                            data.into_iter().map(float_to_fixed_floor).collect();
+                        if let Ok(v) = v
                         {
-                            let v : Result<Vec<_>> = data.into_iter().map(float_to_fixed_floor).collect();
-                            if let Ok(v) = v {
-                                v
-                            } else {
-                                vec![fixed!(0.0 : I1F63); param.vdaf_parameter.gradient_len]
-                            }
+                            v
                         }
-                    ),
+                        else
+                        {
+                            vec![fixed!(0.0 : I1F31); param.vdaf_parameter.gradient_len]
+                        }
+                    }),
+                    FixedTypeTag::FixedType64Bit => VecFixedAny::VecFixed64({
+                        let v: Result<Vec<_>> =
+                            data.into_iter().map(float_to_fixed_floor).collect();
+                        if let Ok(v) = v
+                        {
+                            v
+                        }
+                        else
+                        {
+                            vec![fixed!(0.0 : I1F63); param.vdaf_parameter.gradient_len]
+                        }
+                    }),
                 }
             },
         ))?;
@@ -263,17 +271,7 @@ fn controller_api_new_state(
 ) -> Result<PyControllerState>
 {
     // we convert from f32 to a fraction
-    let privacy_parameter_frac = GenericFraction::<u128>::from(privacy_parameter);
-    let privacy_parameter = match (
-        privacy_parameter_frac.numer(),
-        privacy_parameter_frac.denom(),
-    )
-    {
-        (Some(n), Some(d)) => (*n, *d),
-        _ => Err(anyhow!(
-            "The privacy parameter {privacy_parameter_frac} is not a valid finite fraction."
-        ))?,
-    };
+    let privacy_parameter = PrivacyParameterType::new(EpsilonType::try_from(privacy_parameter)?);
 
     let submission_type = match fixed_bitsize
     {

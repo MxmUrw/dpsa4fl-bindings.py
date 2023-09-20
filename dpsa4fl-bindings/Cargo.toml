@@ -16,8 +16,6 @@ async-std = "1.9"
 dpsa4fl = { git = "https://github.com/dpsa-project/dpsa4fl", branch = "main" }
 url = { version = "2.3.1" }
 anyhow = "1.0"
-# prio = { version = "0.10.0", features = ["multithreaded"] }
-# prio = {git = "https://github.com/dpsa-project/libprio-rs.git", branch ="feature-simple-dp", features = ["multithreaded"]}
 fixed = "1.19"
 fixed-macro = "1.1.1"
 fraction = "0.13.1"
