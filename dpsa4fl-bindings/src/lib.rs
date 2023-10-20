@@ -212,18 +212,18 @@ fn client_api_submit(
                             vec![fixed!(0.0 : I1F31); param.vdaf_parameter.gradient_len]
                         }
                     }),
-                    FixedTypeTag::FixedType64Bit => VecFixedAny::VecFixed64({
-                        let v: Result<Vec<_>> =
-                            data.into_iter().map(float_to_fixed_floor).collect();
-                        if let Ok(v) = v
-                        {
-                            v
-                        }
-                        else
-                        {
-                            vec![fixed!(0.0 : I1F63); param.vdaf_parameter.gradient_len]
-                        }
-                    }),
+                    // FixedTypeTag::FixedType64Bit => VecFixedAny::VecFixed64({
+                    //     let v: Result<Vec<_>> =
+                    //         data.into_iter().map(float_to_fixed_floor).collect();
+                    //     if let Ok(v) = v
+                    //     {
+                    //         v
+                    //     }
+                    //     else
+                    //     {
+                    //         vec![fixed!(0.0 : I1F63); param.vdaf_parameter.gradient_len]
+                    //     }
+                    // }),
                 }
             },
         ))?;
@@ -277,7 +277,7 @@ fn controller_api_new_state(
     {
         16 => FixedTypeTag::FixedType16Bit,
         32 => FixedTypeTag::FixedType32Bit,
-        64 => FixedTypeTag::FixedType64Bit,
+        // 64 => FixedTypeTag::FixedType64Bit,
         _ => Err(anyhow!(
             "The bitsize {fixed_bitsize} is not supported. Only 16, 32 or 64 is."
         ))?,
